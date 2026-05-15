@@ -52,7 +52,7 @@ ordering="NONE"
 side="BOTH"
 
 [[dependencies.ccapplied]]
-modId="appliedenergistics2"
+modId="ae2"
 mandatory=true
 versionRange="[15.4.8,)"
 ordering="NONE"
@@ -60,7 +60,21 @@ side="BOTH"
 
 [[dependencies.ccapplied]]
 modId="extendedcrafting"
-mandatory=true
+mandatory=false
 versionRange="[6.0.10,)"
-ordering="NONE"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.ccapplied]]
+modId="avaritia"
+mandatory=false
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.ccapplied]]
+modId="avaritianeo"
+mandatory=false
+versionRange="[0,)"
+ordering="AFTER"
 side="BOTH"

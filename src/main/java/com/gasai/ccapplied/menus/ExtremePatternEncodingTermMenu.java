@@ -147,14 +147,21 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         }
 
 
-        ItemStack recipeResult = getRecipePreview();
-        
-        if (recipeResult.isEmpty()) {
+        ItemStack[] craftingGrid = new ItemStack[SLOTS];
+        for (int i = 0; i < SLOTS; i++) {
+            craftingGrid[i] = craftingMatrix.getStackInSlot(i);
+        }
+
+        var recipeMatch = com.gasai.ccapplied.crafting.ExtendedCraftingRecipeHelper.findAnyRecipe(
+                craftingGrid, getPlayer().level());
+
+        if (recipeMatch == null || recipeMatch.result().isEmpty()) {
             return;
         }
         
         var encodingLogic = ((com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost) getHost()).getLogic();
-        encodingLogic.fillFromCraftingMatrix(craftingMatrix, recipeResult);
+        encodingLogic.fillFromCraftingMatrix(craftingMatrix, recipeMatch.result());
+        encodingLogic.setRecipeId(recipeMatch.recipeId());
         
         boolean success = encodingLogic.encodePattern();
         

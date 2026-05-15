@@ -4,6 +4,7 @@ import com.gasai.ccapplied.CCApplied;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
+import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.ResourceLocation;
@@ -26,17 +27,53 @@ public class CCAppliedJeiPlugin implements IModPlugin {
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         var helper = registration.getTransferHelper();
         registration.addRecipeTransferHandler(new ExtremeJeiRecipeTransferHandler(helper), RecipeTypes.CRAFTING);
+
+        registerReflectedTransfer(registration, helper,
+                "com.blakebr0.extendedcrafting.compat.jei.category.table.BasicTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "com.blakebr0.extendedcrafting.compat.jei.category.table.AdvancedTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "com.blakebr0.extendedcrafting.compat.jei.category.table.EliteTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "com.blakebr0.extendedcrafting.compat.jei.category.table.UltimateTableCategory");
+
+        registerReflectedTransfer(registration, helper,
+                "committee.nova.mods.avaritia.init.compat.jei.category.tables.ExtremeCraftingTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "committee.nova.mods.avaritia.init.compat.jei.category.tables.NetherCraftingTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "committee.nova.mods.avaritia.init.compat.jei.category.tables.EndCraftingTableCategory");
+        registerReflectedTransfer(registration, helper,
+                "committee.nova.mods.avaritia.init.compat.jei.category.tables.SculkCraftingTableCategory");
+
+        registerReflectedTransfer(registration, helper,
+                "net.byAqua3.avaritia.compat.jei.AvaritiaJEIPlugin",
+                "EXTREME_CRAFTING");
+    }
+
+    private static void registerReflectedTransfer(
+            IRecipeTransferRegistration registration,
+            mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper helper,
+            String categoryClassName) {
+        registerReflectedTransfer(registration, helper, categoryClassName, "RECIPE_TYPE");
+    }
+
+    private static void registerReflectedTransfer(
+            IRecipeTransferRegistration registration,
+            mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper helper,
+            String categoryClassName,
+            String fieldName) {
         try {
-            var basic = com.blakebr0.extendedcrafting.compat.jei.category.table.BasicTableCategory.RECIPE_TYPE;
-            var advanced = com.blakebr0.extendedcrafting.compat.jei.category.table.AdvancedTableCategory.RECIPE_TYPE;
-            var elite = com.blakebr0.extendedcrafting.compat.jei.category.table.EliteTableCategory.RECIPE_TYPE;
-            var ultimate = com.blakebr0.extendedcrafting.compat.jei.category.table.UltimateTableCategory.RECIPE_TYPE;
-            registration.addRecipeTransferHandler(new ECJeiRecipeTransferHandler(basic, helper), basic);
-            registration.addRecipeTransferHandler(new ECJeiRecipeTransferHandler(advanced, helper), advanced);
-            registration.addRecipeTransferHandler(new ECJeiRecipeTransferHandler(elite, helper), elite);
-            registration.addRecipeTransferHandler(new ECJeiRecipeTransferHandler(ultimate, helper), ultimate);
-        } catch (Throwable ignored) {}
+            Class<?> categoryClass = Class.forName(categoryClassName);
+            Object recipeType = categoryClass.getField(fieldName).get(null);
+            if (recipeType instanceof RecipeType<?> type) {
+                @SuppressWarnings({ "rawtypes", "unchecked" })
+                RecipeType<Object> typedRecipeType = (RecipeType) type;
+                registration.addRecipeTransferHandler(
+                        new ECJeiRecipeTransferHandler(typedRecipeType, helper),
+                        typedRecipeType);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 }
-
-
