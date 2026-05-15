@@ -1,6 +1,9 @@
 package com.gasai.ccapplied.core.client;
 
+import appeng.api.util.AEColor;
+import com.gasai.ccapplied.core.registry.CCItems;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -24,6 +27,12 @@ public final class ClientInit {
     public static void onModelRegistry(ModelEvent.RegisterAdditional event) {
         InitAdditionalModels.init(event);
     }
-}
 
+    @SubscribeEvent
+    public static void onItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register(
+                (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
+                CCItems.EXTREME_PATTERN_TERMINAL.get());
+    }
+}
 

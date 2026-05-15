@@ -104,9 +104,28 @@ dependencies {
     implementation fg.deobf("curse.maven:applied-energistics-2-223794:6852919")
     implementation fg.deobf("curse.maven:guideme-1173950:7013686")
 
-    // Extended Crafting
-    implementation fg.deobf("curse.maven:extended-crafting-268387:6880322")
-    implementation fg.deobf("curse.maven:cucumber-272335:6880321")
+    // Optional compile-time APIs. These are not bundled or required at runtime.
+    compileOnly fg.deobf("curse.maven:extended-crafting-268387:6880322")
+    compileOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+
+    // Dev test: Extended Crafting
+     runtimeOnly fg.deobf("curse.maven:extended-crafting-268387:6880322")
+     runtimeOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+
+    // Extended Crafting: Expanded
+    // Uses the same mod id as Extended Crafting. Comment out regular Extended Crafting above before enabling.
+    // runtimeOnly fg.deobf("curse.maven:extended-crafting-expanded-1017786:5613251")
+    // runtimeOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+
+    // Re:Avaritia
+    // runtimeOnly fg.deobf("curse.maven:re-avaritia-623969:7647188")
+
+    // AvaritiaNeo
+     runtimeOnly fg.deobf("curse.maven:avaritianeo-1083158:7940905")
+
+    // Extended Terminal
+    // runtimeOnly fg.deobf("curse.maven:myotus-lib-1496024:7995254")
+    // runtimeOnly fg.deobf("curse.maven:extended-terminal-1302078:7995350")
 }
 
 tasks.named('processResources', ProcessResources).configure {
