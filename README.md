@@ -1,29 +1,62 @@
 # AE2 Molecular Assembler Plus
 
-EN:
-Adds **9x9 auto-crafting** for **Applied Energistics 2 (AE2)**, including:
-- an extended **Molecular Assembler**
-- a **Pattern Encoding Terminal**
-- **pattern items/templates** used to encode crafting layouts
+AE2 Molecular Assembler Plus is a Forge addon for Minecraft 1.20.1 that extends Applied Energistics 2 auto-crafting with 9x9 pattern encoding and assembly.
 
-For now it works with **Extended Crafting (EC)**. Later I plan to add **Avaritia** support too. If you find bugs or want to help, please do — I'm a young/inexperienced developer and I genuinely appreciate feedback.
+## Features
 
-RU:
-Добавляет **автокрафт 9x9** для **Applied Energistics 2 (AE2)**, включая:
-- расширенный **молекулярный сборщик**
-- **терминал кодирования шаблонов**
-- предметы/шаблоны, которые используются для кодирования раскладок крафта
+- Extreme Pattern Encoding Terminal with a 9x9 crafting grid.
+- Extreme Blank Pattern item for encoding large crafting layouts.
+- Extreme Crafting Pattern item for encoded 9x9 recipes.
+- Extreme Molecular Assembler block for AE2 auto-crafting with supported 9x9 recipes.
+- JEI recipe transfer support: the JEI `+` button can move supported recipes into the terminal grid.
+- Optional recipe integration for supported crafting-table mods.
+- Conditional crafting recipes that appear only when the matching optional mod is installed.
 
-Пока совместимо только с **Extended Crafting (EC)**. Позже добавлю поддержку **Avaritia**. Если найдёте баги или захотите помочь — буду очень благодарен, я ещё учусь делать моды.
+## Supported Mods
 
-## Requirements
-- Minecraft: **1.20.1**
-- Forge: **47.4.0**
-- Applied Energistics 2 (AE2): **>= 15.4.8**
-- Extended Crafting (EC): **>= 6.0.10**
+AE2 is the base mod. Everything else in this table is optional: AE2 Molecular Assembler Plus can load without it.
 
-## Installation
-1. Install Forge for the correct Minecraft version.
-2. Install the required mods (see “Requirements”).
-3. Drop this mod jar into `mods/`.
+| Mod | Version | Pattern Terminal | JEI `+` Transfer | Conditional Recipes | Links |
+| --- | --- | --- | --- | --- | --- |
+| Applied Energistics 2 | 1.20.1, AE2 15.4.8+ | Core mod | Vanilla crafting recipes | Base AE2 recipes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2), [Modrinth](https://modrinth.com/mod/ae2) |
+| Extended Crafting | 1.20.1, 6.0.10+ | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting), [Modrinth](https://modrinth.com/mod/extended-crafting) |
+| Extended Crafting: Expanded | 1.20.1 | Partial | Via Extended Crafting categories | Via Extended Crafting ids | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting-expanded) |
+| Re:Avaritia | 1.20.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/re-avaritia), [Modrinth](https://modrinth.com/mod/re-avaritia) |
+| AvaritiaNeo | 1.20.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/avaritianeo) |
+| Extended Terminal | 1.20.1 | No | No | No | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-terminal), [Modrinth](https://modrinth.com/mod/extended-terminal) |
 
+Notes:
+
+- Extended Crafting: Expanded uses the same mod id as Extended Crafting, so support is handled through the Extended Crafting integration path.
+- Re:Avaritia and AvaritiaNeo both use Avaritia-style ids. Recipes use common item ids so they can work with either fork when possible.
+- Extended Terminal is listed because it targets similar terminal workflows, but AE2 Molecular Assembler Plus does not depend on it.
+
+## JEI Integration
+
+When JEI is installed, supported recipe categories show a `+` transfer button. Clicking it sends the recipe layout into the Extreme Pattern Encoding Terminal and centers shaped recipes inside the 9x9 grid.
+
+Supported JEI transfer targets include:
+
+- Minecraft crafting recipes
+- Extended Crafting table categories
+- Re:Avaritia table categories
+- AvaritiaNeo extreme crafting
+
+## Conditional Recipes
+
+Base AE2 recipes are always available for:
+
+- `ccapplied:extreme_blank_pattern`
+- `ccapplied:extreme_pattern_terminal`
+- `ccapplied:extreme_molecular_assembler`
+
+Extra recipes are loaded only when the matching mod is present:
+
+- `extendedcrafting` recipes use Extended Crafting components and tables.
+- `avaritia` recipes use Avaritia/Re:Avaritia/AvaritiaNeo items that share common ids.
+
+Encoded crafting patterns are not craftable directly. They must be created through the Extreme Pattern Encoding Terminal so they contain recipe data.
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md).
