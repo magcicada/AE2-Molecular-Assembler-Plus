@@ -58,8 +58,8 @@
         "translate": "gui.ccapplied.draconic_tier_label"
       },
       "position": {
-        "left": 76,
-        "top": 142
+        "left": 10,
+        "bottom": 260
       }
     },
     "draconic_energy_label": {
@@ -67,8 +67,8 @@
         "translate": "gui.ccapplied.draconic_energy_label"
       },
       "position": {
-        "left": 38,
-        "top": 290
+        "left": 10,
+        "bottom": 110
       }
     }
   },
