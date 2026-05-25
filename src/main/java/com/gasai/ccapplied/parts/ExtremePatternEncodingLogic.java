@@ -18,6 +18,8 @@ import appeng.util.inv.InternalInventoryHost;
 
 import com.gasai.ccapplied.patterns.ExtremeCraftingPattern;
 import com.gasai.ccapplied.items.ExtremeEncodedPatternItem;
+import com.gasai.ccapplied.items.DraconicEncodedPatternItem;
+import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 
 /**
  * Encoding logic for extreme (9x9) template.
@@ -54,6 +56,10 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
 
     private static boolean isExtremeBlank(ItemStack stack) {
         return !stack.isEmpty() && stack.getItem() == CCItems.EXTREME_BLANK_PATTERN.get();
+    }
+
+    private static boolean isDraconicBlank(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() == CCItems.DRACONIC_BLANK_PATTERN.get();
     }
 
     @Override
@@ -93,6 +99,8 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
 
         if (details instanceof ExtremeCraftingPattern extreme) {
             loadExtremeCraftingPattern(extreme);
+        } else if (details instanceof DraconicFusionPattern draconic) {
+            loadDraconicFusionPattern(draconic);
         }
 
         saveChanges();
@@ -125,6 +133,38 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
         } finally {
             inv.endBatch();
         }
+    }
+
+    private void loadDraconicFusionPattern(DraconicFusionPattern pattern) {
+        var inputs = pattern.getInputStacks();
+        encodedInputInv.beginBatch();
+        try {
+            encodedInputInv.clear();
+            for (int i = 0; i < Math.min(DraconicFusionPattern.TOTAL_INPUT_SLOTS, inputs.length); i++) {
+                var stack = inputs[i];
+                if (stack == null || stack.isEmpty()) {
+                    continue;
+                }
+                var key = AEItemKey.of(stack);
+                if (key != null) {
+                    encodedInputInv.setStack(i, new GenericStack(key, Math.max(1, stack.getCount())));
+                }
+            }
+        } finally {
+            encodedInputInv.endBatch();
+        }
+
+        encodedOutputInv.beginBatch();
+        try {
+            encodedOutputInv.clear();
+            var output = pattern.getOutputStack();
+            var outKey = output.isEmpty() ? null : AEItemKey.of(output);
+            encodedOutputInv.setStack(0, outKey == null ? null : new GenericStack(outKey, Math.max(1, output.getCount())));
+        } finally {
+            encodedOutputInv.endBatch();
+        }
+
+        this.recipeId = pattern.getRecipeId();
     }
 
     public ConfigInventory getEncodedInputInv() {
@@ -273,10 +313,84 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
         return true;
     }
 
+    public boolean encodeDraconicPattern(GenericStack[] inputs13, GenericStack output, DraconicFusionPattern.FusionTier tier,
+            long totalEnergy, @Nullable ResourceLocation fusionRecipeId) {
+        if (isClientSide()) {
+            return false;
+        }
+        if (inputs13 == null || inputs13.length != DraconicFusionPattern.TOTAL_INPUT_SLOTS || output == null) {
+            return false;
+        }
+
+        var resultPattern = new ItemStack(CCItems.DRACONIC_FUSION_PATTERN.get());
+        var encodedPatternItem = (DraconicEncodedPatternItem) resultPattern.getItem();
+        resultPattern = encodedPatternItem.encode(inputs13, output, tier, totalEnergy, fusionRecipeId);
+
+        var existingPattern = encodedPatternInv.getStackInSlot(0);
+        if (!existingPattern.isEmpty()) {
+            encodedPatternInv.extractItem(0, existingPattern.getCount(), false);
+            encodedPatternInv.insertItem(0, resultPattern, false);
+            return true;
+        }
+
+        var blankPattern = blankPatternInv.getStackInSlot(0);
+        if (!isDraconicBlank(blankPattern)) {
+            return false;
+        }
+
+        blankPatternInv.extractItem(0, 1, false);
+        encodedPatternInv.insertItem(0, resultPattern, false);
+        return true;
+    }
+
     
     public void clearCraftingGrid() {
         encodedInputInv.clear();
         encodedOutputInv.clear();
+    }
+
+    public void saveDraconicMatrix(InternalInventory craftingMatrix, ItemStack recipeResult) {
+        encodedInputInv.beginBatch();
+        try {
+            for (int i = 0; i < DraconicFusionPattern.TOTAL_INPUT_SLOTS; i++) {
+                ItemStack stack = i < craftingMatrix.size() ? craftingMatrix.getStackInSlot(i) : ItemStack.EMPTY;
+                if (stack.isEmpty()) {
+                    encodedInputInv.setStack(i, null);
+                    continue;
+                }
+                var key = AEItemKey.of(stack);
+                encodedInputInv.setStack(i, key == null ? null : new GenericStack(key, Math.max(1, stack.getCount())));
+            }
+            for (int i = DraconicFusionPattern.TOTAL_INPUT_SLOTS; i < encodedInputInv.size(); i++) {
+                encodedInputInv.setStack(i, null);
+            }
+        } finally {
+            encodedInputInv.endBatch();
+        }
+
+        encodedOutputInv.beginBatch();
+        try {
+            encodedOutputInv.clear();
+            if (!recipeResult.isEmpty()) {
+                var outKey = AEItemKey.of(recipeResult);
+                if (outKey != null) {
+                    encodedOutputInv.setStack(0, new GenericStack(outKey, Math.max(1, recipeResult.getCount())));
+                }
+            }
+        } finally {
+            encodedOutputInv.endBatch();
+        }
+    }
+
+    public void loadDraconicMatrixInto(InternalInventory craftingMatrix) {
+        for (int i = 0; i < Math.min(DraconicFusionPattern.TOTAL_INPUT_SLOTS, craftingMatrix.size()); i++) {
+            craftingMatrix.extractItem(i, Integer.MAX_VALUE, false);
+            var gs = encodedInputInv.getStack(i);
+            if (gs == null || !(gs.what() instanceof AEItemKey key)) {
+                continue;
+            }
+            craftingMatrix.insertItem(i, key.toStack((int) Math.max(1, Math.min(gs.amount(), 64))), false);
+        }
     }
 
     

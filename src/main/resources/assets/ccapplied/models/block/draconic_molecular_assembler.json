@@ -1,0 +1,7 @@
+{
+  "parent": "ccapplied:block/extreme_molecular_assembler",
+  "textures": {
+    "particle": "ccapplied:block/draconic_molecular_assembler",
+    "outside": "ccapplied:block/draconic_molecular_assembler"
+  }
+}

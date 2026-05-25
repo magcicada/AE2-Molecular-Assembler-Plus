@@ -1,6 +1,8 @@
 package com.gasai.ccapplied.core.registry;
 
 import com.gasai.ccapplied.CCApplied;
+import com.gasai.ccapplied.items.DraconicBlankPatternItem;
+import com.gasai.ccapplied.items.DraconicEncodedPatternItem;
 import com.gasai.ccapplied.items.ExtremeBlankPatternItem;
 import com.gasai.ccapplied.items.ExtremeEncodedPatternItem;
 import net.minecraft.world.item.Item;
@@ -22,6 +24,16 @@ public final class CCItems {
             () -> new ExtremeEncodedPatternItem(new Item.Properties().stacksTo(1))
     );
 
+    public static final RegistryObject<Item> DRACONIC_BLANK_PATTERN = ITEMS.register(
+            "draconic_blank_pattern",
+            () -> new DraconicBlankPatternItem(new Item.Properties().stacksTo(64))
+    );
+
+    public static final RegistryObject<Item> DRACONIC_FUSION_PATTERN = ITEMS.register(
+            "draconic_fusion_pattern",
+            () -> new DraconicEncodedPatternItem(new Item.Properties().stacksTo(1))
+    );
+
     public static final RegistryObject<Item> EXTREME_PATTERN_TERMINAL = ITEMS.register(
         "extreme_pattern_terminal",
         () -> new appeng.items.parts.PartItem<>(
@@ -30,6 +42,15 @@ public final class CCItems {
                 com.gasai.ccapplied.parts.ExtremePatternEncodingTerminalPart::new
         )
 );
+
+    public static final RegistryObject<Item> DRACONIC_PATTERN_TERMINAL = ITEMS.register(
+            "draconic_pattern_terminal",
+            () -> new appeng.items.parts.PartItem<>(
+                    new Item.Properties(),
+                    com.gasai.ccapplied.parts.DraconicPatternEncodingTerminalPart.class,
+                    com.gasai.ccapplied.parts.DraconicPatternEncodingTerminalPart::new
+            )
+    );
 
 
     private CCItems() {}

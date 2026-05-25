@@ -18,6 +18,8 @@ public final class InitRenderTypes {
 
     public static void init() {
         ItemBlockRenderTypes.setRenderLayer(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
     }
 }
-

@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 
 import appeng.api.config.Actionable;
@@ -62,12 +63,22 @@ import appeng.util.inv.filter.IAEItemFilter;
 import com.gasai.ccapplied.CCApplied;
 import com.gasai.ccapplied.patterns.IMolecularAssemblerSupportedPattern;
 import com.gasai.ccapplied.patterns.ExtremeCraftingPattern;
+import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 
 /**
  * TileEntity for Extreme Molecular Assembler - supports 9x9 recipes
  */
 public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         implements IUpgradeableObject, IGridTickable, ICraftingMachine, IPowerChannelState {
+    public enum AssemblerTier {
+        WYVERN,
+        DRACONIC,
+        CHAOTIC;
+
+        public boolean canHandle(DraconicFusionPattern.FusionTier required) {
+            return this.ordinal() >= required.ordinal();
+        }
+    }
 
     /**
      * Identifies the sub-inventory used by extreme molecular assemblers to store the input items for the crafting process.
@@ -88,12 +99,22 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     private boolean isAwake = false;
     private boolean forcePlan = false;
     private boolean reboot = true;
+    private AssemblerTier assemblerTier = AssemblerTier.CHAOTIC;
+    private long fusionEnergyAccumulated = 0L;
+    private int fusionCraftTicks = 0;
+    private int fusionAnimationRefreshTicks = 0;
 
     @OnlyIn(Dist.CLIENT)
     private AssemblerAnimationStatus animationStatus;
 
     public ExtremeMolecularAssemblerTileEntity(BlockEntityType<?> blockEntityType, BlockPos pos, BlockState blockState) {
+        this(blockEntityType, pos, blockState, resolveTierByBlockState(blockState));
+    }
+
+    public ExtremeMolecularAssemblerTileEntity(BlockEntityType<?> blockEntityType, BlockPos pos, BlockState blockState,
+            AssemblerTier assemblerTier) {
         super(blockEntityType, pos, blockState);
+        this.assemblerTier = assemblerTier;
 
         this.getMainNode()
                 .setIdlePowerUsage(0.0)
@@ -139,9 +160,8 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         if (this.myPattern.isEmpty()) {
             boolean isEmpty = this.gridInv.isEmpty() && this.patternInv.isEmpty();
 
-            // Only accept our own extreme crafting patterns!
             if (isEmpty && patternDetails instanceof IMolecularAssemblerSupportedPattern pattern) {
-                if (canCraftPattern(pattern, table)) {
+                if (canCraftPattern(pattern)) {
                     this.forcePlan = true;
                     this.myPlan = pattern;
                     this.pushDirection = where;
@@ -157,11 +177,47 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         return false;
     }
     
-    private boolean canCraftPattern(IMolecularAssemblerSupportedPattern pattern, KeyCounter[] table) {
-        if (pattern instanceof ExtremeCraftingPattern extremePattern) {
+    private boolean canCraftPattern(IMolecularAssemblerSupportedPattern pattern) {
+        if (isTieredDraconicAssembler()) {
+            if (pattern instanceof DraconicFusionPattern fusionPattern) {
+                return assemblerTier.canHandle(fusionPattern.getTier());
+            }
+            return false;
+        }
+
+        if (pattern instanceof DraconicFusionPattern) {
+            return false;
+        }
+
+        if (pattern instanceof ExtremeCraftingPattern) {
             return true;
         }
+
+        return false;
+    }
+
+    private boolean isAllowedStoredPattern(IMolecularAssemblerSupportedPattern pattern) {
+        if (!canCraftPattern(pattern)) {
+            return false;
+        }
+        if (pattern instanceof DraconicFusionPattern fusionPattern) {
+            return assemblerTier.canHandle(fusionPattern.getTier());
+        }
         return true;
+    }
+
+    private static AssemblerTier resolveTierByBlockState(BlockState state) {
+        try {
+            var block = state.getBlock();
+            if (block == com.gasai.ccapplied.core.registry.CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get()) {
+                return AssemblerTier.WYVERN;
+            }
+            if (block == com.gasai.ccapplied.core.registry.CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get()) {
+                return AssemblerTier.DRACONIC;
+            }
+        } catch (Exception ignored) {
+        }
+        return AssemblerTier.CHAOTIC;
     }
 
     private void fillGrid(KeyCounter[] table, IMolecularAssemblerSupportedPattern adapter) {
@@ -201,6 +257,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         boolean hasAllItems = true;
         for (int x = 0; x < this.craftingInv.getContainerSize(); x++) {
             ItemStack stack = this.gridInv.getStackInSlot(x);
+            if (stack.isEmpty() && !this.myPlan.isSlotEnabled(x)) {
+                continue;
+            }
             AEItemKey key = stack.isEmpty() ? null : AEItemKey.of(stack);
             
             if (!this.myPlan.isItemValid(x, key, this.getLevel())) {
@@ -253,6 +312,8 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             }
         }
 
+        data.putLong("fusionEnergyAccumulated", this.fusionEnergyAccumulated);
+        data.putInt("fusionCraftTicks", this.fusionCraftTicks);
         this.upgrades.writeToNBT(data, "upgrades");
     }
 
@@ -263,6 +324,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         this.forcePlan = false;
         this.myPattern = ItemStack.EMPTY;
         this.myPlan = null;
+        this.fusionEnergyAccumulated = data.getLong("fusionEnergyAccumulated");
+        this.fusionCraftTicks = data.getInt("fusionCraftTicks");
+        this.fusionAnimationRefreshTicks = 0;
 
         if (data.contains("myPlan")) {
             var pattern = ItemStack.of(data.getCompound("myPlan"));
@@ -288,7 +352,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
                 if (!myPattern.isEmpty()) {
                     if (PatternDetailsHelper.decodePattern(myPattern, getLevel(),
                             false) instanceof IMolecularAssemblerSupportedPattern supportedPlan) {
-                        this.myPlan = supportedPlan;
+                        if (isAllowedStoredPattern(supportedPlan)) {
+                            this.myPlan = supportedPlan;
+                        }
                     }
                 }
 
@@ -308,18 +374,24 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
 
         if (!is.isEmpty()) {
             if (ItemStack.isSameItemSameTags(is, this.myPattern)) {
-                reset = false;
+                reset = this.myPlan == null || !isAllowedStoredPattern(this.myPlan);
             } else if (PatternDetailsHelper.decodePattern(is, getLevel(),
                     false) instanceof IMolecularAssemblerSupportedPattern supportedPattern) {
-                reset = false;
-                this.progress = 0;
-                this.myPattern = is;
-                this.myPlan = supportedPattern;
+                if (isAllowedStoredPattern(supportedPattern)) {
+                    reset = false;
+                    this.progress = 0;
+                    this.myPattern = is;
+                    this.myPlan = supportedPattern;
+                }
             }
         }
 
         if (reset) {
+            this.ejectAllHeldInputs();
             this.progress = 0;
+            this.fusionEnergyAccumulated = 0L;
+            this.fusionCraftTicks = 0;
+            this.fusionAnimationRefreshTicks = 0;
             this.forcePlan = false;
             this.myPlan = null;
             this.myPattern = ItemStack.EMPTY;
@@ -401,6 +473,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             this.ejectHeldItems();
             this.updateSleepiness();
             this.progress = 0;
+            this.fusionEnergyAccumulated = 0L;
+            this.fusionCraftTicks = 0;
+            this.fusionAnimationRefreshTicks = 0;
             return this.isAwake ? TickRateModulation.IDLE : TickRateModulation.SLEEP;
         }
 
@@ -418,14 +493,25 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         }
 
         this.reboot = false;
+        boolean fusionCraftReady = false;
+        if (this.myPlan instanceof DraconicFusionPattern fusionPattern) {
+            TickRateModulation fusionResult = this.tickDraconicFusionCraft(fusionPattern, ticksSinceLastCall);
+            if (fusionResult != null) {
+                return fusionResult;
+            }
+            fusionCraftReady = true;
+        }
+
         int speed = 10;
-        switch (this.upgrades.getInstalledUpgrades(AEItems.SPEED_CARD)) {
-            case 0 -> this.progress += this.userPower(ticksSinceLastCall, speed = 10, 1.0);
-            case 1 -> this.progress += this.userPower(ticksSinceLastCall, speed = 13, 1.3);
-            case 2 -> this.progress += this.userPower(ticksSinceLastCall, speed = 17, 1.7);
-            case 3 -> this.progress += this.userPower(ticksSinceLastCall, speed = 20, 2.0);
-            case 4 -> this.progress += this.userPower(ticksSinceLastCall, speed = 25, 2.5);
-            case 5 -> this.progress += this.userPower(ticksSinceLastCall, speed = 50, 5.0);
+        if (!fusionCraftReady) {
+            switch (this.upgrades.getInstalledUpgrades(AEItems.SPEED_CARD)) {
+                case 0 -> this.progress += this.userPower(ticksSinceLastCall, speed = 10, 1.0);
+                case 1 -> this.progress += this.userPower(ticksSinceLastCall, speed = 13, 1.3);
+                case 2 -> this.progress += this.userPower(ticksSinceLastCall, speed = 17, 1.7);
+                case 3 -> this.progress += this.userPower(ticksSinceLastCall, speed = 20, 2.0);
+                case 4 -> this.progress += this.userPower(ticksSinceLastCall, speed = 25, 2.5);
+                case 5 -> this.progress += this.userPower(ticksSinceLastCall, speed = 50, 5.0);
+            }
         }
 
         if (this.progress >= 100) {
@@ -451,6 +537,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
                     this.myPlan = null;
                     this.pushDirection = null;
                 }
+                this.fusionEnergyAccumulated = 0L;
+                this.fusionCraftTicks = 0;
+                this.fusionAnimationRefreshTicks = 0;
 
                 this.ejectHeldItems();
 
@@ -471,6 +560,145 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         }
 
         return TickRateModulation.FASTER;
+    }
+
+    @Nullable
+    private TickRateModulation tickDraconicFusionCraft(DraconicFusionPattern fusionPattern, int ticksSinceLastCall) {
+        long required = Math.max(0L, fusionPattern.getTotalEnergy());
+        int chargeTicks = getFusionPhaseTicks();
+        int craftTicks = getFusionPhaseTicks();
+
+        this.refreshFusionAnimation(fusionPattern, ticksSinceLastCall);
+
+        if (required > 0 && this.fusionEnergyAccumulated < required) {
+            long remaining = required - this.fusionEnergyAccumulated;
+            long chargePerTick = Math.max(1L, (required + chargeTicks - 1L) / chargeTicks);
+            long wanted = Math.min(remaining, chargePerTick * Math.max(1, ticksSinceLastCall));
+            long pulled = pullFusionEnergy(wanted);
+            if (pulled <= 0) {
+                return TickRateModulation.FASTER;
+            }
+            this.fusionEnergyAccumulated = Math.min(required, this.fusionEnergyAccumulated + pulled);
+            this.progress = Math.min(50.0, (this.fusionEnergyAccumulated * 50.0) / required);
+            return TickRateModulation.FASTER;
+        }
+
+        this.fusionCraftTicks += Math.max(1, ticksSinceLastCall);
+        if (this.fusionCraftTicks < craftTicks) {
+            this.progress = 50.0 + (this.fusionCraftTicks * 50.0) / craftTicks;
+            return TickRateModulation.FASTER;
+        }
+
+        this.progress = 100;
+        return null;
+    }
+
+    private int getFusionPhaseTicks() {
+        int baseTicks = switch (this.assemblerTier) {
+            case WYVERN -> 170;
+            case DRACONIC -> 108;
+            case CHAOTIC -> 47;
+        };
+        return Math.max(1, (int) Math.ceil(baseTicks / getSpeedCardMultiplier()));
+    }
+
+    private double getSpeedCardMultiplier() {
+        return switch (this.upgrades.getInstalledUpgrades(AEItems.SPEED_CARD)) {
+            case 1 -> 1.3;
+            case 2 -> 1.7;
+            case 3 -> 2.0;
+            case 4 -> 2.5;
+            case 5 -> 5.0;
+            default -> 1.0;
+        };
+    }
+
+    private void refreshFusionAnimation(DraconicFusionPattern fusionPattern, int ticksSinceLastCall) {
+        this.fusionAnimationRefreshTicks -= Math.max(1, ticksSinceLastCall);
+        if (this.fusionAnimationRefreshTicks > 0) {
+            return;
+        }
+
+        this.fusionAnimationRefreshTicks = 80;
+        this.sendCraftingAnimation(fusionPattern.getOutputStack(), (byte) 1);
+    }
+
+    private void sendCraftingAnimation(ItemStack stack, byte speed) {
+        var item = AEItemKey.of(stack);
+        if (item == null || this.level == null) {
+            return;
+        }
+        final TargetPoint where = new TargetPoint(this.worldPosition.getX(), this.worldPosition.getY(),
+                this.worldPosition.getZ(), 32, this.level);
+        NetworkHandler.instance()
+                .sendToAllAround(new AssemblerAnimationPacket(this.worldPosition, speed, item), where);
+    }
+
+    private long pullFusionEnergy(long wanted) {
+        if (wanted <= 0) {
+            return 0;
+        }
+        long fromAdjacent = pullAdjacentForgeEnergy(wanted);
+        if (fromAdjacent >= wanted) {
+            return fromAdjacent;
+        }
+        var grid = getMainNode().getGrid();
+        if (grid == null) {
+            return fromAdjacent;
+        }
+        double extracted = grid.getEnergyService().extractAEPower(
+                wanted - fromAdjacent,
+                Actionable.MODULATE,
+                PowerMultiplier.CONFIG);
+        return fromAdjacent + Math.max(0L, (long) extracted);
+    }
+
+    private long pullAdjacentForgeEnergy(long wanted) {
+        if (wanted <= 0 || level == null) {
+            return 0;
+        }
+        long pulled = 0;
+        for (Direction direction : Direction.values()) {
+            if (pulled >= wanted) {
+                break;
+            }
+            var be = level.getBlockEntity(worldPosition.relative(direction));
+            if (be == null) {
+                continue;
+            }
+            var cap = be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
+            if (!cap.isPresent()) {
+                continue;
+            }
+            long remaining = wanted - pulled;
+            int request = (int) Math.min(Integer.MAX_VALUE, remaining);
+            pulled += cap.map(energy -> energy.extractEnergy(request, false)).orElse(0);
+        }
+        return pulled;
+    }
+
+    private void ejectAllHeldInputs() {
+        if (this.myPlan == null) {
+            return;
+        }
+        for (int x = 0; x < 81; x++) {
+            ItemStack stack = this.gridInv.getStackInSlot(x);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            ItemStack remainder = stack.copy();
+            if (this.pushDirection != null) {
+                remainder = this.pushTo(remainder, this.pushDirection);
+            } else {
+                for (Direction d : Direction.values()) {
+                    remainder = this.pushTo(remainder, d);
+                    if (remainder.isEmpty()) {
+                        break;
+                    }
+                }
+            }
+            this.gridInv.setItemDirect(x, remainder);
+        }
     }
 
     private void ejectHeldItems() {
@@ -605,11 +833,11 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             var patternItem = patternInv.getStackInSlot(0);
             var pattern = PatternDetailsHelper.decodePattern(patternItem, level);
             if (pattern instanceof IMolecularAssemblerSupportedPattern supportedPattern) {
-                return supportedPattern;
+                return isAllowedStoredPattern(supportedPattern) ? supportedPattern : null;
             }
             return null;
         } else {
-            return myPlan;
+            return myPlan != null && isAllowedStoredPattern(myPlan) ? myPlan : null;
         }
     }
 
@@ -631,10 +859,28 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             }
 
             if (this.hasPattern()) {
+                if (!ExtremeMolecularAssemblerTileEntity.this.myPlan.isSlotEnabled(slot)) {
+                    return false;
+                }
                 return ExtremeMolecularAssemblerTileEntity.this.myPlan.isItemValid(slot, AEItemKey.of(stack),
                         ExtremeMolecularAssemblerTileEntity.this.getLevel());
             }
             return false;
         }
+    }
+
+    public boolean isTieredDraconicAssembler() {
+        return this.assemblerTier != AssemblerTier.CHAOTIC
+                || getBlockState().getBlock() == CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get();
+    }
+
+    public String getAssemblerDisplayName() {
+        return switch (assemblerTier) {
+            case WYVERN -> "Wyvern Molecular Assembler";
+            case DRACONIC -> "Draconic Molecular Assembler";
+            case CHAOTIC -> getBlockState().getBlock() == CCBlocks.EXTREME_MOLECULAR_ASSEMBLER.get()
+                    ? "Extreme Molecular Assembler"
+                    : "Chaotic Molecular Assembler";
+        };
     }
 }

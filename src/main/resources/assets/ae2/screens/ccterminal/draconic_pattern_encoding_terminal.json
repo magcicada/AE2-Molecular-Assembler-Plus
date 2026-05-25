@@ -1,0 +1,131 @@
+{
+  "includes": [
+    "../terminals/terminal.json"
+  ],
+  "slots": {
+    "CRAFTING_GRID": {
+      "left": 7,
+      "bottom": 53,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "CRAFTING_RESULT": {
+      "left": 173,
+      "bottom": 244
+    },
+    "DRACONIC_SLOT_0": { "left": 80, "bottom": 244 },
+    "DRACONIC_SLOT_1": { "left": 108, "bottom": 240 },
+    "DRACONIC_SLOT_2": { "left": 130, "bottom": 218 },
+    "DRACONIC_SLOT_3": { "left": 134, "bottom": 190 },
+    "DRACONIC_SLOT_4": { "left": 130, "bottom": 162 },
+    "DRACONIC_SLOT_5": { "left": 108, "bottom": 140 },
+    "DRACONIC_SLOT_6": { "left": 80, "bottom": 136 },
+    "DRACONIC_SLOT_7": { "left": 52, "bottom": 140 },
+    "DRACONIC_SLOT_8": { "left": 30, "bottom": 162 },
+    "DRACONIC_SLOT_9": { "left": 26, "bottom": 190 },
+    "DRACONIC_SLOT_10": { "left": 30, "bottom": 218 },
+    "DRACONIC_SLOT_11": { "left": 52, "bottom": 240 },
+    "DRACONIC_CATALYST": { "left": 80, "bottom": 190 },
+    "BLANK_PATTERN": {
+      "left": 173,
+      "bottom": 208
+    },
+    "ENCODED_PATTERN": {
+      "left": 173,
+      "bottom": 172
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2.Terminal"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "crafting_grid_title": {
+      "text": {
+        "translate": "gui.ccapplied.DraconicPatternEncoding"
+      },
+      "position": {
+        "left": 18,
+        "bottom": 273
+      }
+    },
+    "draconic_tier_label": {
+      "text": {
+        "translate": "gui.ccapplied.draconic_tier_label"
+      },
+      "position": {
+        "left": 76,
+        "top": 132
+      }
+    },
+    "draconic_energy_label": {
+      "text": {
+        "translate": "gui.ccapplied.draconic_energy_label"
+      },
+      "position": {
+        "left": 38,
+        "top": 280
+      }
+    }
+  },
+  "terminalStyle": {
+    "header": {
+      "texture": "guis/draconic_pattern_encoder.png",
+      "textureWidth": 512,
+      "textureHeight": 512,
+      "srcRect": [0, 0, 195, 17]
+    },
+    "firstRow": {
+      "texture": "guis/draconic_pattern_encoder.png",
+      "textureWidth": 512,
+      "textureHeight": 512,
+      "srcRect": [0, 17, 195, 18]
+    },
+    "row": {
+      "texture": "guis/draconic_pattern_encoder.png",
+      "textureWidth": 512,
+      "textureHeight": 512,
+      "srcRect": [0, 35, 195, 18]
+    },
+    "lastRow": {
+      "texture": "guis/draconic_pattern_encoder.png",
+      "textureWidth": 512,
+      "textureHeight": 512,
+      "srcRect": [0, 53, 195, 18]
+    },
+    "bottom": {
+      "texture": "guis/draconic_pattern_encoder.png",
+      "textureWidth": 512,
+      "textureHeight": 512,
+      "srcRect": [0, 71, 195, 278]
+    }
+  },
+  "widgets": {
+    "draconicEncodePattern": {
+      "left": 173,
+      "bottom": 190,
+      "width": 16,
+      "height": 16,
+      "texture": "guis/pattern_encoding_terminal.png",
+      "textureWidth": 256,
+      "textureHeight": 256,
+      "srcRect": [240, 0, 16, 16],
+      "hoverSrcRect": [240, 16, 16, 16]
+    },
+    "draconicClearPattern": {
+      "left": 173,
+      "bottom": 130,
+      "width": 20,
+      "height": 20,
+      "texture": "guis/pattern_encoding_terminal.png",
+      "textureWidth": 256,
+      "textureHeight": 256,
+      "srcRect": [224, 0, 16, 16],
+      "hoverSrcRect": [224, 16, 16, 16]
+    }
+  }
+}

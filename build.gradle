@@ -104,6 +104,17 @@ dependencies {
     implementation fg.deobf("curse.maven:applied-energistics-2-223794:6852919")
     implementation fg.deobf("curse.maven:guideme-1173950:7013686")
 
+    //Mekanism (MC 1.20.1)
+    implementation fg.deobf("curse.maven:mekanism-268560:6552911")
+
+    // Draconic Evolution (MC 1.20.1)
+    compileOnly fg.deobf("curse.maven:draconic-evolution-223565:6793843")
+    runtimeOnly fg.deobf("curse.maven:draconic-evolution-223565:6793843")
+    compileOnly fg.deobf("curse.maven:brandons-core-231382:5422013")
+    runtimeOnly fg.deobf("curse.maven:brandons-core-231382:5422013")
+    compileOnly fg.deobf("curse.maven:codechicken-lib-1-8-242818:5753868")
+    runtimeOnly fg.deobf("curse.maven:codechicken-lib-1-8-242818:5753868")
+
     // Optional compile-time APIs. These are not bundled or required at runtime.
     compileOnly fg.deobf("curse.maven:extended-crafting-268387:6880322")
     compileOnly fg.deobf("curse.maven:cucumber-272335:6880321")

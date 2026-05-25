@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ccapplied:item/draconic_blank_pattern"
+  }
+}

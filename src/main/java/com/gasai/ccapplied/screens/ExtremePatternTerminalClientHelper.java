@@ -2,6 +2,7 @@ package com.gasai.ccapplied.screens;
 
 import com.gasai.ccapplied.core.client.CCAppliedInitScreens;
 import com.gasai.ccapplied.core.registry.CCMenuTypes;
+import com.gasai.ccapplied.menus.DraconicPatternEncodingTermMenu;
 import com.gasai.ccapplied.menus.ExtremeMolecularAssemblerMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +27,11 @@ public final class ExtremePatternTerminalClientHelper {
                     CCMenuTypes.EXTREME_PATTERN_TERM.get(),
                     ExtremePatternEncodingTermScreen::new,
                     "/screens/ccterminal/extreme_pattern_encoding_terminal.json"
+                );
+                CCAppliedInitScreens.register(
+                        CCMenuTypes.DRACONIC_PATTERN_TERM.get(),
+                        DraconicPatternEncodingTermScreen::new,
+                        "/screens/ccterminal/draconic_pattern_encoding_terminal.json"
                 );
                 
                 MenuScreens.<ExtremeMolecularAssemblerMenu, ExtremeMolecularAssemblerScreen>register(

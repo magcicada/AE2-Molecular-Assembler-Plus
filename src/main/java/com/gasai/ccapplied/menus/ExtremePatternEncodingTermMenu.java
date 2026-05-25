@@ -18,6 +18,8 @@ import com.gasai.ccapplied.slots.ExtremeBlankPatternSlot;
 import com.gasai.ccapplied.slots.ExtremeEncodedPatternSlot;
 import com.gasai.ccapplied.slots.ExtremeCraftingTermSlot;
 import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.crafting.DraconicFusionRecipeHelper;
+import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 
 import java.util.List;
 
@@ -33,6 +35,8 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
 
     public static final String ACTION_ENCODE = "ext_encode";
     public static final String ACTION_CLEAR  = "ext_clear";
+    private static final int DRACONIC_CENTER_SLOT = 40; // 9x9 center
+    private static final int[] DRACONIC_OUTER_SLOTS = { 10, 19, 28, 37, 46, 55, 16, 25, 34, 43, 52, 61 };
 
     public static final MenuType<ExtremePatternEncodingTermMenu> TYPE =
     MenuTypeBuilder.create(
@@ -146,6 +150,12 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             return;
         }
 
+        var draconicMatch = tryFindDraconicFusionRecipe();
+        if (draconicMatch != null) {
+            encodeDraconicPattern(draconicMatch);
+            return;
+        }
+
 
         ItemStack[] craftingGrid = new ItemStack[SLOTS];
         for (int i = 0; i < SLOTS; i++) {
@@ -166,6 +176,58 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         boolean success = encodingLogic.encodePattern();
         
         
+    }
+
+    private com.gasai.ccapplied.crafting.DraconicFusionRecipeMatch tryFindDraconicFusionRecipe() {
+        if (getPlayer() == null || getPlayer().level() == null) {
+            return null;
+        }
+        var catalyst = craftingMatrix.getStackInSlot(DRACONIC_CENTER_SLOT);
+        if (catalyst.isEmpty()) {
+            return null;
+        }
+
+        java.util.List<ItemStack> outer = new java.util.ArrayList<>();
+        for (int slot : DRACONIC_OUTER_SLOTS) {
+            var st = craftingMatrix.getStackInSlot(slot);
+            if (!st.isEmpty()) {
+                outer.add(st.copy());
+            }
+        }
+        if (outer.isEmpty()) {
+            return null;
+        }
+        return DraconicFusionRecipeHelper.findRecipe(outer, catalyst, getPlayer().level());
+    }
+
+    private void encodeDraconicPattern(com.gasai.ccapplied.crafting.DraconicFusionRecipeMatch match) {
+        var encodingLogic = ((com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost) getHost()).getLogic();
+        var inputs = new appeng.api.stacks.GenericStack[DraconicFusionPattern.TOTAL_INPUT_SLOTS];
+
+        int idx = 0;
+        for (int slot : DRACONIC_OUTER_SLOTS) {
+            var stack = craftingMatrix.getStackInSlot(slot);
+            if (!stack.isEmpty()) {
+                var key = appeng.api.stacks.AEItemKey.of(stack);
+                if (key != null && idx < DraconicFusionPattern.OUTER_SLOTS) {
+                    inputs[idx++] = new appeng.api.stacks.GenericStack(key, 1);
+                }
+            }
+        }
+
+        var catalyst = craftingMatrix.getStackInSlot(DRACONIC_CENTER_SLOT);
+        var catalystKey = appeng.api.stacks.AEItemKey.of(catalyst);
+        if (catalystKey == null) {
+            return;
+        }
+        inputs[DraconicFusionPattern.OUTER_SLOTS] = new appeng.api.stacks.GenericStack(catalystKey, 1);
+
+        var outKey = appeng.api.stacks.AEItemKey.of(match.result());
+        if (outKey == null) {
+            return;
+        }
+        var output = new appeng.api.stacks.GenericStack(outKey, Math.max(1, match.result().getCount()));
+        encodingLogic.encodeDraconicPattern(inputs, output, match.tier(), match.totalEnergy(), match.recipeId());
     }
 
     public void clearAll() {

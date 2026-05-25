@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "ccapplied:block/chaotic_molecular_assembler"
+    },
+    "powered=true": {
+      "model": "ccapplied:block/chaotic_molecular_assembler"
+    }
+  }
+}

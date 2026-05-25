@@ -18,6 +18,7 @@ import appeng.menu.implementations.MenuTypeBuilder;
 import appeng.api.inventories.InternalInventory;
 import appeng.client.Point;
 import appeng.menu.slot.IOptionalSlot;
+import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 
 /**
  * Menu for Extreme Molecular Assembler - supports 9x9 recipes
@@ -54,8 +55,17 @@ public class ExtremeMolecularAssemblerMenu extends UpgradeableMenu<ExtremeMolecu
     protected void setupConfig() {
         var mac = this.getHost().getSubInventory(ExtremeMolecularAssemblerTileEntity.INV_MAIN);
 
-        for (int i = 0; i < 81; i++) {
-            this.addSlot(new ExtremeMolecularAssemblerPatternSlot(this, mac, i), SlotSemantics.MACHINE_CRAFTING_GRID);
+        if (this.getHost().isTieredDraconicAssembler()) {
+            for (int i = 0; i < DraconicFusionPattern.OUTER_SLOTS; i++) {
+                this.addSlot(new ExtremeMolecularAssemblerPatternSlot(this, mac, i),
+                        DraconicPatternEncodingTermMenu.OUTER_SLOT_SEMANTICS[i]);
+            }
+            this.addSlot(new ExtremeMolecularAssemblerPatternSlot(this, mac, DraconicFusionPattern.OUTER_SLOTS),
+                    DraconicPatternEncodingTermMenu.CATALYST_SLOT_SEMANTIC);
+        } else {
+            for (int i = 0; i < 81; i++) {
+                this.addSlot(new ExtremeMolecularAssemblerPatternSlot(this, mac, i), SlotSemantics.MACHINE_CRAFTING_GRID);
+            }
         }
 
         this.addSlot(new OutputSlot(mac, 81, null), SlotSemantics.MACHINE_OUTPUT);
@@ -132,7 +142,12 @@ public class ExtremeMolecularAssemblerMenu extends UpgradeableMenu<ExtremeMolecu
             }
 
             var pattern = mac.getHost().getCurrentPattern();
-            return slotIndex >= 0 && slotIndex < 81 && pattern != null && pattern.isSlotEnabled(slotIndex);
+            if (pattern != null) {
+                return pattern.isSlotEnabled(slotIndex);
+            }
+            return mac.getHost().isTieredDraconicAssembler()
+                    ? slotIndex >= 0 && slotIndex < DraconicFusionPattern.TOTAL_INPUT_SLOTS
+                    : slotIndex >= 0 && slotIndex < 81;
         }
 
         @Override

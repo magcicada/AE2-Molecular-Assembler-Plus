@@ -1,7 +1,7 @@
 {
   "parent": "block/block",
   "textures": {
-    "all": "ae2:block/molecular_assembler_lights"
+    "all": "ccapplied:block/molecular_assembler_lights"
   },
   "elements": [
     {

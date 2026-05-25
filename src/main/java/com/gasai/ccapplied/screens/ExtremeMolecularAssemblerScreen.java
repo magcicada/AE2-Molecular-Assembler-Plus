@@ -25,6 +25,7 @@ public class ExtremeMolecularAssemblerScreen extends UpgradeableScreen<ExtremeMo
     protected void updateBeforeRender() {
         super.updateBeforeRender();
 
+        setTextContent("dialog_title", Component.literal(this.menu.getHost().getAssemblerDisplayName()));
         this.pb.setFullMsg(Component.literal(this.menu.getCurrentProgress() + "%"));
     }
 }

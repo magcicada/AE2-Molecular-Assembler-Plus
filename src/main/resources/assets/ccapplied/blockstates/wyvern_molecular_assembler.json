@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "ccapplied:block/wyvern_molecular_assembler"
+    },
+    "powered=true": {
+      "model": "ccapplied:block/wyvern_molecular_assembler"
+    }
+  }
+}

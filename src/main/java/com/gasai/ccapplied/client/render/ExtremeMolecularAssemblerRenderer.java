@@ -30,7 +30,7 @@ import com.gasai.ccapplied.CCApplied;
 @OnlyIn(Dist.CLIENT)
 public class ExtremeMolecularAssemblerRenderer implements BlockEntityRenderer<ExtremeMolecularAssemblerTileEntity> {
     
-    public static final ResourceLocation LIGHTS_MODEL = CCApplied.makeId("block/extreme_molecular_assembler_lights");
+    public static final ResourceLocation LIGHTS_MODEL = CCApplied.makeId("block/molecular_assembler_lights");
     
     private final RandomSource particleRandom = RandomSource.create();
     

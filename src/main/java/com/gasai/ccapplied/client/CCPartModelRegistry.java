@@ -9,7 +9,9 @@ public class CCPartModelRegistry {
     public static void registerPartModels() {
         PartModels.registerModels(
             ResourceLocation.fromNamespaceAndPath(CCApplied.MODID, "part/extreme_pattern_encoding_terminal_off"),
-            ResourceLocation.fromNamespaceAndPath(CCApplied.MODID, "part/extreme_pattern_encoding_terminal_on")
+            ResourceLocation.fromNamespaceAndPath(CCApplied.MODID, "part/extreme_pattern_encoding_terminal_on"),
+            ResourceLocation.fromNamespaceAndPath(CCApplied.MODID, "part/draconic_pattern_encoding_terminal_off"),
+            ResourceLocation.fromNamespaceAndPath(CCApplied.MODID, "part/draconic_pattern_encoding_terminal_on")
         );
         
     }

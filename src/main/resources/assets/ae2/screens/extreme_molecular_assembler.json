@@ -11,6 +11,19 @@
       "top": 5,
       "grid": "BREAK_AFTER_9COLS"
     },
+    "DRACONIC_SLOT_0": { "left": 84, "top": 31 },
+    "DRACONIC_SLOT_1": { "left": 112, "top": 35 },
+    "DRACONIC_SLOT_2": { "left": 134, "top": 57 },
+    "DRACONIC_SLOT_3": { "left": 138, "top": 85 },
+    "DRACONIC_SLOT_4": { "left": 134, "top": 113 },
+    "DRACONIC_SLOT_5": { "left": 112, "top": 135 },
+    "DRACONIC_SLOT_6": { "left": 84, "top": 139 },
+    "DRACONIC_SLOT_7": { "left": 56, "top": 135 },
+    "DRACONIC_SLOT_8": { "left": 34, "top": 113 },
+    "DRACONIC_SLOT_9": { "left": 30, "top": 85 },
+    "DRACONIC_SLOT_10": { "left": 34, "top": 57 },
+    "DRACONIC_SLOT_11": { "left": 56, "top": 35 },
+    "DRACONIC_CATALYST": { "left": 84, "top": 85 },
     "ENCODED_PATTERN": {
       "left": 223,
       "top": 36
@@ -27,7 +40,7 @@
       },
       "position": {
         "left": 8,
-        "top": -8
+        "top": 6
       }
     }
   },
