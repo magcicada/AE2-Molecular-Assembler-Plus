@@ -1,6 +1,7 @@
 package com.gasai.ccapplied.integration.jei;
 
 import com.gasai.ccapplied.CCApplied;
+import com.brandon3055.draconicevolution.api.crafting.IFusionRecipe;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
@@ -27,6 +28,7 @@ public class CCAppliedJeiPlugin implements IModPlugin {
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         var helper = registration.getTransferHelper();
         registration.addRecipeTransferHandler(new ExtremeJeiRecipeTransferHandler(helper), RecipeTypes.CRAFTING);
+        registerDraconicFusionTransfer(registration);
 
         registerReflectedTransfer(registration, helper,
                 "com.blakebr0.extendedcrafting.compat.jei.category.table.BasicTableCategory");
@@ -49,6 +51,14 @@ public class CCAppliedJeiPlugin implements IModPlugin {
         registerReflectedTransfer(registration, helper,
                 "net.byAqua3.avaritia.compat.jei.AvaritiaJEIPlugin",
                 "EXTREME_CRAFTING");
+    }
+
+    private static void registerDraconicFusionTransfer(IRecipeTransferRegistration registration) {
+        try {
+            RecipeType<IFusionRecipe> type = RecipeType.create("draconicevolution", "fusion_crafting", IFusionRecipe.class);
+            registration.addRecipeTransferHandler(new DraconicJeiRecipeTransferHandler(type), type);
+        } catch (Throwable ignored) {
+        }
     }
 
     private static void registerReflectedTransfer(

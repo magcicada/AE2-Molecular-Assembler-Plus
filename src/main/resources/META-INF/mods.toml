@@ -1,4 +1,4 @@
-# This is an example mods.toml file. It contains the data relating to the loading mods.
+﻿# This is an example mods.toml file. It contains the data relating to the loading mods.
 # There are several mandatory fields (#mandatory), and many more that are optional (#optional).
 # The overall format is standard TOML format, v0.5.0.
 # Note that there are a couple of TOML lists in this file.
@@ -26,17 +26,10 @@ displayName="AE2 Molecular Assembler Plus"
 description='''
 AE2 Molecular Assembler Plus
 
-RU:
-Автокрафт 9x9 для Applied Energistics 2 (AE2), расширенный молекулярный сборщик, кодировщик шаблонов и шаблоны.
-Сейчас мод работает ТОЛЬКО с Extended Crafting (EC). Позже добавлю поддержку Avaritia.
-Я молодой и неопытный разработчик — если найдёте баги или захотите помочь, буду очень благодарен.
-
-EN:
-9x9 auto-crafting for Applied Energistics 2 (AE2), an extended Molecular Assembler, a Pattern Encoding Terminal and templates.
-For now it works ONLY with Extended Crafting (EC). Later I will add support for Avaritia.
-I am a young and inexperienced developer. If you find bugs or want to help, thank you!
+An Applied Energistics 2 auto-crafting addon with universal pattern encoding and molecular assemblers for recipes from different mods.
+Support is not limited to 9x9 crafting: integrations can handle large crafting grids, recipe tiers, catalysts, energy costs, and custom crafting stations.
+Current integrations include Extended Crafting, Re:Avaritia / AvaritiaNeo, and Draconic Evolution Fusion Crafting.
 '''
-
 [[dependencies.ccapplied]]
 modId="forge"
 mandatory=true

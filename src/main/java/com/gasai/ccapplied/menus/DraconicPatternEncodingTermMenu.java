@@ -59,7 +59,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
     private final Slot encodedPatternSlot;
 
     @GuiSync(40)
-    public int uiTierOrdinal = 0;
+    public int uiTierOrdinal = -1;
     @GuiSync(41)
     public long uiEnergyCost = 0L;
 
@@ -89,6 +89,10 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
 
         registerClientAction(ACTION_ENCODE, this::encode);
         registerClientAction(ACTION_CLEAR, this::clearAll);
+        registerClientAction("draconic_jei_apply_fusion", JeiFusionData.class, data -> {
+            if (isClientSide()) return;
+            applyJeiFusionRecipe(data);
+        });
 
         if (!isClientSide()) {
             logic.loadDraconicMatrixInto(craftingMatrix);
@@ -138,6 +142,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             craftingMatrix.setItemDirect(i, ItemStack.EMPTY);
         }
         clearRecipePreview();
+        logic.setRecipeId(null);
         logic.clearCraftingGrid();
     }
 
@@ -189,7 +194,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
     }
 
     private void clearRecipePreview() {
-        uiTierOrdinal = 0;
+        uiTierOrdinal = -1;
         uiEnergyCost = 0L;
         resultPreviewInv.setItemDirect(0, ItemStack.EMPTY);
     }
@@ -229,12 +234,73 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
         return switch (uiTierOrdinal) {
             case 2 -> "Chaotic";
             case 1 -> "Draconic";
-            default -> "Wyvern";
+            case 0 -> "Wyvern";
+            default -> "";
         };
+    }
+
+    public int getTierOrdinal() {
+        return uiTierOrdinal;
     }
 
     public long getEnergyCost() {
         return uiEnergyCost;
+    }
+
+    public void requestApplyJeiFusion(ItemStack catalyst, List<ItemStack> outer) {
+        var list = new ArrayList<JeiItem>(outer.size());
+        for (var st : outer) {
+            list.add(new JeiItem(toSnbt(st)));
+        }
+        sendClientAction("draconic_jei_apply_fusion", new JeiFusionData(toSnbt(catalyst), list));
+    }
+
+    private void applyJeiFusionRecipe(JeiFusionData data) {
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            craftingMatrix.setItemDirect(i, ItemStack.EMPTY);
+        }
+
+        int limit = Math.min(OUTER_SLOTS, data.outer.size());
+        for (int i = 0; i < limit; i++) {
+            craftingMatrix.setItemDirect(i, fromSnbt(data.outer.get(i).snbt));
+        }
+        craftingMatrix.setItemDirect(CENTER_SLOT, fromSnbt(data.catalyst));
+        findFusionRecipe();
+    }
+
+    private static String toSnbt(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return "{}";
+        }
+        var tag = new net.minecraft.nbt.CompoundTag();
+        stack.save(tag);
+        return tag.toString();
+    }
+
+    private static ItemStack fromSnbt(String snbt) {
+        try {
+            return ItemStack.of(net.minecraft.nbt.TagParser.parseTag(snbt));
+        } catch (Exception ignored) {
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public static class JeiFusionData {
+        public final String catalyst;
+        public final List<JeiItem> outer;
+
+        public JeiFusionData(String catalyst, List<JeiItem> outer) {
+            this.catalyst = catalyst;
+            this.outer = outer;
+        }
+    }
+
+    public static class JeiItem {
+        public final String snbt;
+
+        public JeiItem(String snbt) {
+            this.snbt = snbt;
+        }
     }
 
     private static class PreviewOnlySlot extends AppEngSlot {

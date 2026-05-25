@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "draconicevolution"
+    }
+  ],
+  "pattern": [
+    "III",
+    "IAI",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "item": "draconicevolution:wyvern_crafting_injector"
+    },
+    "A": {
+      "item": "ae2:molecular_assembler"
+    }
+  },
+  "result": {
+    "item": "ccapplied:wyvern_molecular_assembler"
+  }
+}

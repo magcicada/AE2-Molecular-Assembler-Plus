@@ -1,14 +1,16 @@
 # AE2 Molecular Assembler Plus
 
-AE2 Molecular Assembler Plus is a Forge addon for Minecraft 1.20.1 that extends Applied Energistics 2 auto-crafting with 9x9 pattern encoding and assembly.
+AE2 Molecular Assembler Plus is a Forge addon for Minecraft 1.20.1 that extends Applied Energistics 2 auto-crafting with universal pattern encoding and dedicated assemblers for modded crafting workflows.
+
+The mod is not limited to 9x9 recipes. It can support different recipe shapes, station layouts, tiers, catalysts, energy costs, and other requirements from supported mods.
 
 ## Features
 
 - Extreme Pattern Encoding Terminal with a 9x9 crafting grid.
-- Extreme Blank Pattern item for encoding large crafting layouts.
-- Extreme Crafting Pattern item for encoded 9x9 recipes.
-- Extreme Molecular Assembler block for AE2 auto-crafting with supported 9x9 recipes.
-- JEI recipe transfer support: the JEI `+` button can move supported recipes into the terminal grid.
+- Draconic Pattern Encoding Terminal for Draconic Evolution fusion crafting patterns.
+- Dedicated blank and encoded pattern items for supported recipe families.
+- Molecular assembler variants for supported recipe systems and tiered workflows.
+- JEI recipe transfer support: the JEI `+` button can move supported recipes into the matching terminal.
 - Optional recipe integration for supported crafting-table mods.
 - Conditional crafting recipes that appear only when the matching optional mod is installed.
 
@@ -25,6 +27,14 @@ AE2 is the base mod. Everything else in this table is optional: AE2 Molecular As
 | AvaritiaNeo | 1.20.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/avaritianeo) |
 | Extended Terminal | 1.20.1 | No | No | No | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-terminal), [Modrinth](https://modrinth.com/mod/extended-terminal) |
 
+## Other Mods
+
+These integrations are for non-standard crafting systems that are not simple crafting grids.
+
+| Mod | Supported Workflows | Pattern Terminal | Assembler Support | JEI `+` Transfer | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Draconic Evolution | Fusion crafting | Draconic Pattern Encoding Terminal | Wyvern, Draconic, and Chaotic Molecular Assemblers | Yes | Encoded patterns store fusion tier and energy cost. Assemblers enforce tier limits and consume fusion energy. |
+
 Notes:
 
 - Extended Crafting: Expanded uses the same mod id as Extended Crafting, so support is handled through the Extended Crafting integration path.
@@ -33,7 +43,7 @@ Notes:
 
 ## JEI Integration
 
-When JEI is installed, supported recipe categories show a `+` transfer button. Clicking it sends the recipe layout into the Extreme Pattern Encoding Terminal and centers shaped recipes inside the 9x9 grid.
+When JEI is installed, supported recipe categories show a `+` transfer button. Clicking it sends the recipe layout into the matching pattern terminal.
 
 Supported JEI transfer targets include:
 
@@ -41,6 +51,7 @@ Supported JEI transfer targets include:
 - Extended Crafting table categories
 - Re:Avaritia table categories
 - AvaritiaNeo extreme crafting
+- Draconic Evolution fusion crafting
 
 ## Conditional Recipes
 
@@ -54,8 +65,9 @@ Extra recipes are loaded only when the matching mod is present:
 
 - `extendedcrafting` recipes use Extended Crafting components and tables.
 - `avaritia` recipes use Avaritia/Re:Avaritia/AvaritiaNeo items that share common ids.
+- `draconicevolution` recipes add Draconic Fusion patterns, the Draconic Pattern Encoding Terminal, and tiered Draconic Molecular Assemblers.
 
-Encoded crafting patterns are not craftable directly. They must be created through the Extreme Pattern Encoding Terminal so they contain recipe data.
+Encoded crafting patterns are not craftable directly. They must be created through the matching Pattern Encoding Terminal so they contain recipe data.
 
 ## Roadmap
 

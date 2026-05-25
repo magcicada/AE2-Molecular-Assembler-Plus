@@ -32,7 +32,8 @@ public final class ClientInit {
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
         event.register(
                 (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
-                CCItems.EXTREME_PATTERN_TERMINAL.get());
+                CCItems.EXTREME_PATTERN_TERMINAL.get(),
+                CCItems.DRACONIC_PATTERN_TERMINAL.get());
     }
 }
 

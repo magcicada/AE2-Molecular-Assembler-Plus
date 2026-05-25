@@ -20,5 +20,6 @@
   "block.ccapplied.extreme_molecular_assembler": "Extreme Molecular Assembler",
   "block.ccapplied.wyvern_molecular_assembler": "Wyvern Molecular Assembler",
   "block.ccapplied.draconic_molecular_assembler": "Draconic Molecular Assembler",
-  "block.ccapplied.chaotic_molecular_assembler": "Chaotic Molecular Assembler"
+  "block.ccapplied.chaotic_molecular_assembler": "Chaotic Molecular Assembler",
+  "itemGroup.ccapplied": "AE2 Molecular Assembler Plus"
 }

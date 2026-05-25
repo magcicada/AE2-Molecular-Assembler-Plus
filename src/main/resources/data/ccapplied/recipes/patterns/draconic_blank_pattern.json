@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "draconicevolution"
+    }
+  ],
+  "pattern": [
+    "PPP",
+    "PCP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "ae2:blank_pattern"
+    },
+    "C": {
+      "item": "draconicevolution:draconium_core"
+    }
+  },
+  "result": {
+    "item": "ccapplied:draconic_blank_pattern",
+    "count": 4
+  }
+}

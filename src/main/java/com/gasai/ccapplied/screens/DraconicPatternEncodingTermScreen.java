@@ -5,6 +5,7 @@ import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.VerticalButtonBar;
 import appeng.client.Point;
 import com.gasai.ccapplied.menus.DraconicPatternEncodingTermMenu;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -29,9 +30,18 @@ public class DraconicPatternEncodingTermScreen extends MEStorageScreen<DraconicP
     @Override
     protected void updateBeforeRender() {
         ensureVerticalToolbarPosition();
-        setTextContent("draconic_tier_label", Component.literal("Tier: " + menu.getTierText()));
+        setTextContent("draconic_tier_label", Component.literal("Tier: " + menu.getTierText()).withStyle(getTierColor()));
         setTextContent("draconic_energy_label", Component.literal("Energy Cost: " + NumberFormat.getIntegerInstance(Locale.US).format(menu.getEnergyCost()) + " OP"));
         super.updateBeforeRender();
+    }
+
+    private ChatFormatting getTierColor() {
+        return switch (menu.getTierOrdinal()) {
+            case 2 -> ChatFormatting.RED;
+            case 1 -> ChatFormatting.GOLD;
+            case 0 -> ChatFormatting.LIGHT_PURPLE;
+            default -> ChatFormatting.GRAY;
+        };
     }
 
     @SuppressWarnings("unchecked")

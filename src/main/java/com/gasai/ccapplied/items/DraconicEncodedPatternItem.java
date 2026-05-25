@@ -11,6 +11,9 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -163,6 +166,21 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
     @Override
     public @Nullable IPatternDetails decode(AEItemKey what, Level level) {
         return decode(what.toStack(), level, false);
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        var stack = player.getItemInHand(hand);
+
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide) {
+                var blank = new ItemStack(com.gasai.ccapplied.core.registry.CCItems.DRACONIC_BLANK_PATTERN.get());
+                player.setItemInHand(hand, blank);
+            }
+            return InteractionResultHolder.success(stack);
+        }
+
+        return super.use(level, player, hand);
     }
 
     private static CompoundTag writeGenericItem(GenericStack gs) {
