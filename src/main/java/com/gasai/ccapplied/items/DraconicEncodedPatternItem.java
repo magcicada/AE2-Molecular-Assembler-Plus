@@ -4,6 +4,8 @@ import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import appeng.crafting.pattern.EncodedPatternItem;
+import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -174,8 +176,10 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
 
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide) {
-                var blank = new ItemStack(com.gasai.ccapplied.core.registry.CCItems.DRACONIC_BLANK_PATTERN.get());
-                player.setItemInHand(hand, blank);
+                if (CCOptionalMods.isDraconicEvolutionLoaded() && CCItems.DRACONIC_BLANK_PATTERN != null) {
+                    var blank = new ItemStack(CCItems.DRACONIC_BLANK_PATTERN.get());
+                    player.setItemInHand(hand, blank);
+                }
             }
             return InteractionResultHolder.success(stack);
         }

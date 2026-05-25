@@ -1,6 +1,7 @@
 package com.gasai.ccapplied.parts;
 
 import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,7 +60,10 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
     }
 
     private static boolean isDraconicBlank(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem() == CCItems.DRACONIC_BLANK_PATTERN.get();
+        return CCOptionalMods.isDraconicEvolutionLoaded()
+                && CCItems.DRACONIC_BLANK_PATTERN != null
+                && !stack.isEmpty()
+                && stack.getItem() == CCItems.DRACONIC_BLANK_PATTERN.get();
     }
 
     @Override
@@ -316,6 +320,9 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
     public boolean encodeDraconicPattern(GenericStack[] inputs13, GenericStack output, DraconicFusionPattern.FusionTier tier,
             long totalEnergy, @Nullable ResourceLocation fusionRecipeId) {
         if (isClientSide()) {
+            return false;
+        }
+        if (!CCOptionalMods.isDraconicEvolutionLoaded() || CCItems.DRACONIC_FUSION_PATTERN == null) {
             return false;
         }
         if (inputs13 == null || inputs13.length != DraconicFusionPattern.TOTAL_INPUT_SLOTS || output == null) {

@@ -51,6 +51,7 @@ import appeng.core.definitions.AEItems;
 import appeng.core.localization.GuiText;
 import appeng.core.localization.Tooltips;
 import com.gasai.ccapplied.core.registry.CCBlocks;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.network.TargetPoint;
 import appeng.core.sync.packets.AssemblerAnimationPacket;
@@ -207,15 +208,19 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     }
 
     private static AssemblerTier resolveTierByBlockState(BlockState state) {
-        try {
-            var block = state.getBlock();
-            if (block == com.gasai.ccapplied.core.registry.CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get()) {
-                return AssemblerTier.WYVERN;
+        if (CCOptionalMods.isDraconicEvolutionLoaded()) {
+            try {
+                var block = state.getBlock();
+                if (CCBlocks.WYVERN_MOLECULAR_ASSEMBLER != null
+                        && block == CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get()) {
+                    return AssemblerTier.WYVERN;
+                }
+                if (CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER != null
+                        && block == CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get()) {
+                    return AssemblerTier.DRACONIC;
+                }
+            } catch (Exception ignored) {
             }
-            if (block == com.gasai.ccapplied.core.registry.CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get()) {
-                return AssemblerTier.DRACONIC;
-            }
-        } catch (Exception ignored) {
         }
         return AssemblerTier.CHAOTIC;
     }
@@ -871,14 +876,18 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
 
     public boolean isTieredDraconicAssembler() {
         return this.assemblerTier != AssemblerTier.CHAOTIC
-                || getBlockState().getBlock() == CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get();
+                || (CCOptionalMods.isDraconicEvolutionLoaded()
+                    && CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER != null
+                    && getBlockState().getBlock() == CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get());
     }
 
     public String getAssemblerDisplayName() {
         return switch (assemblerTier) {
             case WYVERN -> "Wyvern Molecular Assembler";
             case DRACONIC -> "Draconic Molecular Assembler";
-            case CHAOTIC -> getBlockState().getBlock() == CCBlocks.EXTREME_MOLECULAR_ASSEMBLER.get()
+            case CHAOTIC -> !CCOptionalMods.isDraconicEvolutionLoaded()
+                    || CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER == null
+                    || getBlockState().getBlock() == CCBlocks.EXTREME_MOLECULAR_ASSEMBLER.get()
                     ? "Extreme Molecular Assembler"
                     : "Chaotic Molecular Assembler";
         };

@@ -5,6 +5,7 @@ import com.gasai.ccapplied.menus.DraconicPatternEncodingTermMenu;
 import com.gasai.ccapplied.menus.ExtremePatternEncodingTermMenu;
 import com.gasai.ccapplied.menus.ExtremeMolecularAssemblerMenu;
 import net.minecraft.world.inventory.MenuType;
+import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -15,8 +16,10 @@ public final class CCMenuTypes {
 
     public static final RegistryObject<MenuType<ExtremePatternEncodingTermMenu>> EXTREME_PATTERN_TERM =
             MENUS.register("extreme_patternterm", () -> ExtremePatternEncodingTermMenu.TYPE);
-    public static final RegistryObject<MenuType<DraconicPatternEncodingTermMenu>> DRACONIC_PATTERN_TERM =
-            MENUS.register("draconic_patternterm", () -> DraconicPatternEncodingTermMenu.TYPE);
+    public static final @Nullable RegistryObject<MenuType<DraconicPatternEncodingTermMenu>> DRACONIC_PATTERN_TERM =
+            CCOptionalMods.isDraconicEvolutionLoaded()
+                    ? MENUS.register("draconic_patternterm", () -> DraconicPatternEncodingTermMenu.TYPE)
+                    : null;
     
     public static final RegistryObject<MenuType<ExtremeMolecularAssemblerMenu>> EXTREME_MOLECULAR_ASSEMBLER =
             MENUS.register("extreme_molecular_assembler", () -> ExtremeMolecularAssemblerMenu.TYPE);

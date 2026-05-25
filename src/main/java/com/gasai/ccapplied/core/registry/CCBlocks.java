@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -31,41 +32,41 @@ public class CCBlocks {
                 .noOcclusion())
     );
 
-    public static final RegistryObject<Block> WYVERN_MOLECULAR_ASSEMBLER = BLOCKS.register(
+    public static final @Nullable RegistryObject<Block> WYVERN_MOLECULAR_ASSEMBLER = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCKS.register(
             "wyvern_molecular_assembler",
             () -> new ExtremeMolecularAssemblerBlock(Block.Properties.of()
                     .strength(3.5f)
                     .requiresCorrectToolForDrops()
-                    .noOcclusion()));
+                    .noOcclusion())) : null;
 
-    public static final RegistryObject<Block> DRACONIC_MOLECULAR_ASSEMBLER = BLOCKS.register(
+    public static final @Nullable RegistryObject<Block> DRACONIC_MOLECULAR_ASSEMBLER = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCKS.register(
             "draconic_molecular_assembler",
             () -> new ExtremeMolecularAssemblerBlock(Block.Properties.of()
                     .strength(3.5f)
                     .requiresCorrectToolForDrops()
-                    .noOcclusion()));
+                    .noOcclusion())) : null;
 
-    public static final RegistryObject<Block> CHAOTIC_MOLECULAR_ASSEMBLER = BLOCKS.register(
+    public static final @Nullable RegistryObject<Block> CHAOTIC_MOLECULAR_ASSEMBLER = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCKS.register(
             "chaotic_molecular_assembler",
             () -> new ExtremeMolecularAssemblerBlock(Block.Properties.of()
                     .strength(3.5f)
                     .requiresCorrectToolForDrops()
-                    .noOcclusion()));
+                    .noOcclusion())) : null;
     
     public static final RegistryObject<Item> EXTREME_MOLECULAR_ASSEMBLER_ITEM = ITEMS.register(
         "extreme_molecular_assembler",
         () -> new BlockItem(EXTREME_MOLECULAR_ASSEMBLER.get(), new Item.Properties())
     );
 
-    public static final RegistryObject<Item> WYVERN_MOLECULAR_ASSEMBLER_ITEM = ITEMS.register(
+    public static final @Nullable RegistryObject<Item> WYVERN_MOLECULAR_ASSEMBLER_ITEM = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "wyvern_molecular_assembler",
-            () -> new BlockItem(WYVERN_MOLECULAR_ASSEMBLER.get(), new Item.Properties()));
-    public static final RegistryObject<Item> DRACONIC_MOLECULAR_ASSEMBLER_ITEM = ITEMS.register(
+            () -> new BlockItem(WYVERN_MOLECULAR_ASSEMBLER.get(), new Item.Properties())) : null;
+    public static final @Nullable RegistryObject<Item> DRACONIC_MOLECULAR_ASSEMBLER_ITEM = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "draconic_molecular_assembler",
-            () -> new BlockItem(DRACONIC_MOLECULAR_ASSEMBLER.get(), new Item.Properties()));
-    public static final RegistryObject<Item> CHAOTIC_MOLECULAR_ASSEMBLER_ITEM = ITEMS.register(
+            () -> new BlockItem(DRACONIC_MOLECULAR_ASSEMBLER.get(), new Item.Properties())) : null;
+    public static final @Nullable RegistryObject<Item> CHAOTIC_MOLECULAR_ASSEMBLER_ITEM = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "chaotic_molecular_assembler",
-            () -> new BlockItem(CHAOTIC_MOLECULAR_ASSEMBLER.get(), new Item.Properties()));
+            () -> new BlockItem(CHAOTIC_MOLECULAR_ASSEMBLER.get(), new Item.Properties())) : null;
     
     public static final RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> EXTREME_MOLECULAR_ASSEMBLER_TILE = BLOCK_ENTITIES.register(
         "extreme_molecular_assembler",
@@ -81,7 +82,7 @@ public class CCBlocks {
         }
     );
 
-    public static final RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> WYVERN_MOLECULAR_ASSEMBLER_TILE = BLOCK_ENTITIES.register(
+    public static final @Nullable RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> WYVERN_MOLECULAR_ASSEMBLER_TILE = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCK_ENTITIES.register(
             "wyvern_molecular_assembler",
             () -> {
                 var typeHolder = new AtomicReference<BlockEntityType<ExtremeMolecularAssemblerTileEntity>>();
@@ -90,9 +91,9 @@ public class CCBlocks {
                 typeHolder.set(type);
                 ((ExtremeMolecularAssemblerBlock) WYVERN_MOLECULAR_ASSEMBLER.get()).setBlockEntity(ExtremeMolecularAssemblerTileEntity.class, type, null, null);
                 return type;
-            });
+            }) : null;
 
-    public static final RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> DRACONIC_MOLECULAR_ASSEMBLER_TILE = BLOCK_ENTITIES.register(
+    public static final @Nullable RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> DRACONIC_MOLECULAR_ASSEMBLER_TILE = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCK_ENTITIES.register(
             "draconic_molecular_assembler",
             () -> {
                 var typeHolder = new AtomicReference<BlockEntityType<ExtremeMolecularAssemblerTileEntity>>();
@@ -101,9 +102,9 @@ public class CCBlocks {
                 typeHolder.set(type);
                 ((ExtremeMolecularAssemblerBlock) DRACONIC_MOLECULAR_ASSEMBLER.get()).setBlockEntity(ExtremeMolecularAssemblerTileEntity.class, type, null, null);
                 return type;
-            });
+            }) : null;
 
-    public static final RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> CHAOTIC_MOLECULAR_ASSEMBLER_TILE = BLOCK_ENTITIES.register(
+    public static final @Nullable RegistryObject<BlockEntityType<ExtremeMolecularAssemblerTileEntity>> CHAOTIC_MOLECULAR_ASSEMBLER_TILE = CCOptionalMods.isDraconicEvolutionLoaded() ? BLOCK_ENTITIES.register(
             "chaotic_molecular_assembler",
             () -> {
                 var typeHolder = new AtomicReference<BlockEntityType<ExtremeMolecularAssemblerTileEntity>>();
@@ -112,5 +113,5 @@ public class CCBlocks {
                 typeHolder.set(type);
                 ((ExtremeMolecularAssemblerBlock) CHAOTIC_MOLECULAR_ASSEMBLER.get()).setBlockEntity(ExtremeMolecularAssemblerTileEntity.class, type, null, null);
                 return type;
-            });
+            }) : null;
 }

@@ -6,6 +6,7 @@ import com.gasai.ccapplied.items.DraconicEncodedPatternItem;
 import com.gasai.ccapplied.items.ExtremeBlankPatternItem;
 import com.gasai.ccapplied.items.ExtremeEncodedPatternItem;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -24,15 +25,15 @@ public final class CCItems {
             () -> new ExtremeEncodedPatternItem(new Item.Properties().stacksTo(1))
     );
 
-    public static final RegistryObject<Item> DRACONIC_BLANK_PATTERN = ITEMS.register(
+    public static final @Nullable RegistryObject<Item> DRACONIC_BLANK_PATTERN = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "draconic_blank_pattern",
             () -> new DraconicBlankPatternItem(new Item.Properties().stacksTo(64))
-    );
+    ) : null;
 
-    public static final RegistryObject<Item> DRACONIC_FUSION_PATTERN = ITEMS.register(
+    public static final @Nullable RegistryObject<Item> DRACONIC_FUSION_PATTERN = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "draconic_fusion_pattern",
             () -> new DraconicEncodedPatternItem(new Item.Properties().stacksTo(1))
-    );
+    ) : null;
 
     public static final RegistryObject<Item> EXTREME_PATTERN_TERMINAL = ITEMS.register(
         "extreme_pattern_terminal",
@@ -43,14 +44,14 @@ public final class CCItems {
         )
 );
 
-    public static final RegistryObject<Item> DRACONIC_PATTERN_TERMINAL = ITEMS.register(
+    public static final @Nullable RegistryObject<Item> DRACONIC_PATTERN_TERMINAL = CCOptionalMods.isDraconicEvolutionLoaded() ? ITEMS.register(
             "draconic_pattern_terminal",
             () -> new appeng.items.parts.PartItem<>(
                     new Item.Properties(),
                     com.gasai.ccapplied.parts.DraconicPatternEncodingTerminalPart.class,
                     com.gasai.ccapplied.parts.DraconicPatternEncodingTerminalPart::new
             )
-    );
+    ) : null;
 
 
     private CCItems() {}

@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import com.gasai.ccapplied.client.render.ExtremeMolecularAssemblerRenderer;
 import com.gasai.ccapplied.core.registry.CCBlocks;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 
 @OnlyIn(Dist.CLIENT)
 public final class InitBlockEntityRenderers {
@@ -18,9 +19,11 @@ public final class InitBlockEntityRenderers {
 
     public static void init() {
         register(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
-        register(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
-        register(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
-        register(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
+        if (CCOptionalMods.isDraconicEvolutionLoaded()) {
+            register(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
+            register(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
+            register(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER_TILE.get(), ExtremeMolecularAssemblerRenderer::new);
+        }
     }
 
     private static <T extends BlockEntity> void register(BlockEntityType<T> type,

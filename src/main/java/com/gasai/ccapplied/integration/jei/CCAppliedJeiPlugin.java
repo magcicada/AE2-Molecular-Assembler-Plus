@@ -1,7 +1,6 @@
 package com.gasai.ccapplied.integration.jei;
 
 import com.gasai.ccapplied.CCApplied;
-import com.brandon3055.draconicevolution.api.crafting.IFusionRecipe;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
@@ -55,7 +54,9 @@ public class CCAppliedJeiPlugin implements IModPlugin {
 
     private static void registerDraconicFusionTransfer(IRecipeTransferRegistration registration) {
         try {
-            RecipeType<IFusionRecipe> type = RecipeType.create("draconicevolution", "fusion_crafting", IFusionRecipe.class);
+            Class<?> recipeClass = Class.forName("com.brandon3055.draconicevolution.api.crafting.IFusionRecipe");
+            @SuppressWarnings({ "rawtypes", "unchecked" })
+            RecipeType<Object> type = RecipeType.create("draconicevolution", "fusion_crafting", (Class) recipeClass);
             registration.addRecipeTransferHandler(new DraconicJeiRecipeTransferHandler(type), type);
         } catch (Throwable ignored) {
         }

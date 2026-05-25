@@ -19,12 +19,14 @@ public final class CCCreativeTabs {
                     .icon(() -> new ItemStack(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER_ITEM.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(CCItems.EXTREME_BLANK_PATTERN.get());
-                        output.accept(CCItems.DRACONIC_BLANK_PATTERN.get());
                         output.accept(CCItems.EXTREME_PATTERN_TERMINAL.get());
-                        output.accept(CCItems.DRACONIC_PATTERN_TERMINAL.get());
-                        output.accept(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER_ITEM.get());
-                        output.accept(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER_ITEM.get());
-                        output.accept(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER_ITEM.get());
+                        if (CCOptionalMods.isDraconicEvolutionLoaded()) {
+                            output.accept(CCItems.DRACONIC_BLANK_PATTERN.get());
+                            output.accept(CCItems.DRACONIC_PATTERN_TERMINAL.get());
+                            output.accept(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER_ITEM.get());
+                            output.accept(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER_ITEM.get());
+                            output.accept(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER_ITEM.get());
+                        }
                         output.accept(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER_ITEM.get());
                     })
                     .build());

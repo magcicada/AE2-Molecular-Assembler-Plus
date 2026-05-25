@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import com.gasai.ccapplied.core.registry.CCBlocks;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 
 /**
  * Initializes render layers for blocks
@@ -18,8 +19,10 @@ public final class InitRenderTypes {
 
     public static void init() {
         ItemBlockRenderTypes.setRenderLayer(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
-        ItemBlockRenderTypes.setRenderLayer(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
-        ItemBlockRenderTypes.setRenderLayer(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
-        ItemBlockRenderTypes.setRenderLayer(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+        if (CCOptionalMods.isDraconicEvolutionLoaded()) {
+            ItemBlockRenderTypes.setRenderLayer(CCBlocks.WYVERN_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CCBlocks.DRACONIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CCBlocks.CHAOTIC_MOLECULAR_ASSEMBLER.get(), RenderType.cutout());
+        }
     }
 }

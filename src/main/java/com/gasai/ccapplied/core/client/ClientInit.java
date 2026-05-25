@@ -2,6 +2,7 @@ package com.gasai.ccapplied.core.client;
 
 import appeng.api.util.AEColor;
 import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -32,8 +33,12 @@ public final class ClientInit {
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
         event.register(
                 (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
-                CCItems.EXTREME_PATTERN_TERMINAL.get(),
-                CCItems.DRACONIC_PATTERN_TERMINAL.get());
+                CCItems.EXTREME_PATTERN_TERMINAL.get());
+        if (CCOptionalMods.isDraconicEvolutionLoaded()) {
+            event.register(
+                    (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
+                    CCItems.DRACONIC_PATTERN_TERMINAL.get());
+        }
     }
 }
 

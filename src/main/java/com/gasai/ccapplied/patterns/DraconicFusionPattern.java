@@ -5,6 +5,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
@@ -41,7 +42,9 @@ public class DraconicFusionPattern implements IMolecularAssemblerSupportedPatter
             FusionTier tier,
             long totalEnergy,
             @Nullable ResourceLocation recipeId) {
-        this.definition = AEItemKey.of(CCItems.DRACONIC_FUSION_PATTERN.get());
+        this.definition = CCOptionalMods.isDraconicEvolutionLoaded() && CCItems.DRACONIC_FUSION_PATTERN != null
+                ? AEItemKey.of(CCItems.DRACONIC_FUSION_PATTERN.get())
+                : null;
         this.inputs = createInputs(sparseInputs);
         this.outputs = sparseOutputs;
         this.inputStacks = inputs;
