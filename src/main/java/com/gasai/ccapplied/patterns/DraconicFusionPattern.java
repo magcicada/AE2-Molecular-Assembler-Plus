@@ -13,6 +13,8 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import java.util.Arrays;
+import java.util.List;
 
 public class DraconicFusionPattern implements IMolecularAssemblerSupportedPattern {
     public static final int OUTER_SLOTS = 12;
@@ -65,8 +67,8 @@ public class DraconicFusionPattern implements IMolecularAssemblerSupportedPatter
     }
 
     @Override
-    public GenericStack[] getOutputs() {
-        return outputs;
+    public List<GenericStack> getOutputs() {
+        return Arrays.asList(outputs);
     }
 
     public ItemStack[] getInputStacks() {
@@ -129,7 +131,7 @@ public class DraconicFusionPattern implements IMolecularAssemblerSupportedPatter
                 continue;
             }
             ItemStack actual = container.getItem(i);
-            if (actual.isEmpty() || !ItemStack.isSameItemSameTags(expected, actual) || actual.getCount() < expected.getCount()) {
+            if (actual.isEmpty() || !ItemStack.isSameItemSameComponents(expected, actual) || actual.getCount() < expected.getCount()) {
                 return ItemStack.EMPTY;
             }
         }
@@ -190,14 +192,22 @@ public class DraconicFusionPattern implements IMolecularAssemblerSupportedPatter
             if (expectedKey == null) {
                 continue;
             }
+            boolean filled = false;
             for (KeyCounter counter : table) {
                 if (counter == null || counter.isEmpty()) {
                     continue;
                 }
-                var entry = counter.iterator().next();
-                if (entry.getKey() instanceof AEItemKey key && key.equals(expectedKey) && entry.getLongValue() >= expected.getCount()) {
-                    gridAccessor.set(i, key.toStack(expected.getCount()));
-                    counter.remove(key, expected.getCount());
+                for (var entry : counter) {
+                    if (entry.getKey() instanceof AEItemKey key
+                            && key.equals(expectedKey)
+                            && entry.getLongValue() >= expected.getCount()) {
+                        gridAccessor.set(i, key.toStack(expected.getCount()));
+                        counter.remove(key, expected.getCount());
+                        filled = true;
+                        break;
+                    }
+                }
+                if (filled) {
                     break;
                 }
             }

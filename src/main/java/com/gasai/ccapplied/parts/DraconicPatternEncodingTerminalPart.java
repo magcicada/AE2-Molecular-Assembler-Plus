@@ -6,6 +6,7 @@ import appeng.parts.PartModel;
 import appeng.parts.reporting.AbstractTerminalPart;
 import com.gasai.ccapplied.CCApplied;
 import com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost;
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -13,9 +14,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
 
 import java.util.List;
 
@@ -34,67 +32,49 @@ public class DraconicPatternEncodingTerminalPart extends AbstractTerminalPart im
         super(partItem);
     }
 
-    @Override
     public void addAdditionalDrops(List<ItemStack> drops, boolean wrenched) {
         super.addAdditionalDrops(drops, wrenched);
         for (var is : this.logic.getBlankPatternInv()) drops.add(is);
         for (var is : this.logic.getEncodedPatternInv()) drops.add(is);
     }
 
-    @Override
     public void clearContent() {
         super.clearContent();
         this.logic.getBlankPatternInv().clear();
         this.logic.getEncodedPatternInv().clear();
     }
 
-    @Override
-    public void readFromNBT(CompoundTag data) {
-        super.readFromNBT(data);
-        logic.readFromNBT(data);
+    public void readFromNBT(CompoundTag data, Provider provider) {
+        super.readFromNBT(data, provider);
+        logic.readFromNBT(data, provider);
     }
 
-    @Override
-    public void writeToNBT(CompoundTag data) {
-        super.writeToNBT(data);
-        logic.writeToNBT(data);
+    public void writeToNBT(CompoundTag data, Provider provider) {
+        super.writeToNBT(data, provider);
+        logic.writeToNBT(data, provider);
     }
 
-    @Override
     public MenuType<?> getMenuType(Player p) {
         return com.gasai.ccapplied.core.registry.CCMenuTypes.DRACONIC_PATTERN_TERM.get();
     }
 
-    @Override
     public IPartModel getStaticModels() {
         return this.selectModel(MODELS_OFF, MODELS_ON, MODELS_HAS_CHANNEL);
     }
 
-    @Override
     public ExtremePatternEncodingLogic getLogic() {
         return logic;
     }
 
-    @Override
     public net.minecraft.world.level.Level getLevel() {
         var be = getHost().getBlockEntity();
         return be != null ? be.getLevel() : null;
     }
 
-    @Override
     public void markForSave() {
         getHost().markForSave();
     }
 
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return LazyOptional.of(() -> logic.getBlankPatternInv().toItemHandler()).cast();
-        }
-        return super.getCapability(cap);
-    }
-
-    @Override
     public boolean onPartActivate(Player player, InteractionHand hand, Vec3 pos) {
         if (player.level().isClientSide()) return true;
         var type = getMenuType(player);

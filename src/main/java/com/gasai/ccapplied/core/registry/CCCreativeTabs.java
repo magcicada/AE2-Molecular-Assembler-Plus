@@ -1,19 +1,20 @@
 package com.gasai.ccapplied.core.registry;
 
 import com.gasai.ccapplied.CCApplied;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.function.Supplier;
 
 public final class CCCreativeTabs {
     
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CCApplied.MODID);
+            DeferredRegister.create(BuiltInRegistries.CREATIVE_MODE_TAB, CCApplied.MODID);
 
-    public static final RegistryObject<CreativeModeTab> CCAPPLIED_TAB = CREATIVE_TABS.register("ccapplied_tab",
+    public static final Supplier<CreativeModeTab> CCAPPLIED_TAB = CREATIVE_TABS.register("ccapplied_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.ccapplied"))
                     .icon(() -> new ItemStack(CCBlocks.EXTREME_MOLECULAR_ASSEMBLER_ITEM.get()))

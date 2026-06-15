@@ -38,26 +38,24 @@ public class ExtremePatternDecoder implements IPatternDetailsDecoder {
     @Override
     @Nullable
     public IPatternDetails decodePattern(AEItemKey what, Level level) {
-        return decodePattern(what.toStack(), level, false);
+        return decodePattern(what.toStack(), level);
     }
 
     @Override
     @Nullable
-    public IPatternDetails decodePattern(ItemStack stack, Level level, boolean tryRecovery) {
+    public IPatternDetails decodePattern(ItemStack stack, Level level) {
         if (!isEncodedPattern(stack)) {
             return null;
         }
 
         try {
             if (stack.getItem() == CCItems.EXTREME_CRAFTING_PATTERN.get()) {
-                return ((ExtremeEncodedPatternItem) CCItems.EXTREME_CRAFTING_PATTERN.get())
-                        .decode(stack, level, tryRecovery);
+                return ExtremeEncodedPatternItem.decodeStack(stack, level);
             }
             if (CCOptionalMods.isDraconicEvolutionLoaded()
                     && CCItems.DRACONIC_FUSION_PATTERN != null
                     && stack.getItem() == CCItems.DRACONIC_FUSION_PATTERN.get()) {
-                return ((DraconicEncodedPatternItem) CCItems.DRACONIC_FUSION_PATTERN.get())
-                        .decode(stack, level, tryRecovery);
+                return DraconicEncodedPatternItem.decodeStack(stack, level);
             }
             return null;
         } catch (Exception e) {

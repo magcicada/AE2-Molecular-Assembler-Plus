@@ -2,14 +2,14 @@ package com.gasai.ccapplied.patterns;
 
 import com.gasai.ccapplied.CCApplied;
 import appeng.api.crafting.PatternDetailsHelper;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 /**
  * Registration of decoder for extreme patterns
  */
-@Mod.EventBusSubscriber(modid = CCApplied.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CCApplied.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ExtremePatternRegistration {
 
     private ExtremePatternRegistration() {}

@@ -1,5 +1,6 @@
 package com.gasai.ccapplied.integration.jei;
 
+import com.brandon3055.draconicevolution.api.crafting.IFusionRecipe;
 import com.gasai.ccapplied.menus.DraconicPatternEncodingTermMenu;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.recipe.RecipeType;
@@ -8,17 +9,16 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DraconicJeiRecipeTransferHandler implements IRecipeTransferHandler<DraconicPatternEncodingTermMenu, Object> {
-    private final RecipeType<Object> type;
+public class DraconicJeiRecipeTransferHandler implements IRecipeTransferHandler<DraconicPatternEncodingTermMenu, RecipeHolder<IFusionRecipe>> {
+    private final RecipeType<RecipeHolder<IFusionRecipe>> type;
 
-    @SuppressWarnings("unchecked")
-    public DraconicJeiRecipeTransferHandler(RecipeType<?> type) {
-        this.type = (RecipeType<Object>) type;
+    public DraconicJeiRecipeTransferHandler(RecipeType<RecipeHolder<IFusionRecipe>> type) {
+        this.type = type;
     }
 
     @Override
@@ -32,26 +32,26 @@ public class DraconicJeiRecipeTransferHandler implements IRecipeTransferHandler<
     }
 
     @Override
-    public RecipeType<Object> getRecipeType() {
+    public RecipeType<RecipeHolder<IFusionRecipe>> getRecipeType() {
         return type;
     }
 
     @Override
-    public IRecipeTransferError transferRecipe(DraconicPatternEncodingTermMenu menu, Object recipe,
+    public IRecipeTransferError transferRecipe(DraconicPatternEncodingTermMenu menu, RecipeHolder<IFusionRecipe> recipeHolder,
             IRecipeSlotsView slots, Player player, boolean maxTransfer, boolean doTransfer) {
         if (!doTransfer) {
             return null;
         }
 
         List<ItemStack> outer = new ArrayList<>(DraconicPatternEncodingTermMenu.OUTER_SLOTS);
-        for (var fusionIngredient : fusionIngredients(recipe)) {
+        for (var fusionIngredient : recipeHolder.value().fusionIngredients()) {
             if (outer.size() >= DraconicPatternEncodingTermMenu.OUTER_SLOTS) {
                 break;
             }
-            outer.add(firstStack(ingredientFromUnknown(fusionIngredient)));
+            outer.add(firstStack(fusionIngredient.get()));
         }
 
-        menu.requestApplyJeiFusion(firstStack(catalyst(recipe)), outer);
+        menu.requestApplyJeiFusion(firstStack(recipeHolder.value().getCatalyst()), outer);
         return null;
     }
 
@@ -73,49 +73,9 @@ public class DraconicJeiRecipeTransferHandler implements IRecipeTransferHandler<
         return stack;
     }
 
-    private static List<?> fusionIngredients(Object recipe) {
-        try {
-            Method method = findMethod(recipe.getClass(), "fusionIngredients");
-            Object value = method.invoke(recipe);
-            if (value instanceof List<?> list) {
-                return list;
-            }
-        } catch (ReflectiveOperationException ignored) {
-        }
-        return List.of();
-    }
-
-    private static Ingredient catalyst(Object recipe) {
-        try {
-            Method method = findMethod(recipe.getClass(), "getCatalyst", "catalyst");
-            Object value = method.invoke(recipe);
-            return ingredientFromUnknown(value);
-        } catch (ReflectiveOperationException ignored) {
-        }
-        return Ingredient.EMPTY;
-    }
-
-    private static Ingredient ingredientFromUnknown(Object value) {
-        if (value instanceof Ingredient ingredient) {
-            return ingredient;
-        }
-        if (value == null) {
-            return Ingredient.EMPTY;
-        }
-        try {
-            Method method = findMethod(value.getClass(), "get", "ingredient");
-            Object nested = method.invoke(value);
-            if (nested instanceof Ingredient ingredient) {
-                return ingredient;
-            }
-        } catch (ReflectiveOperationException ignored) {
-        }
-        return Ingredient.EMPTY;
-    }
-
     private static int ingredientCount(Ingredient ingredient) {
         try {
-            Method method = findMethod(ingredient.getClass(), "getCount");
+            var method = ingredient.getClass().getMethod("getCount");
             Object value = method.invoke(ingredient);
             if (value instanceof Number number) {
                 return Math.max(1, number.intValue());
@@ -123,23 +83,5 @@ public class DraconicJeiRecipeTransferHandler implements IRecipeTransferHandler<
         } catch (ReflectiveOperationException ignored) {
         }
         return 1;
-    }
-
-    private static Method findMethod(Class<?> owner, String... names) throws NoSuchMethodException {
-        for (String name : names) {
-            try {
-                Method method = owner.getMethod(name);
-                method.setAccessible(true);
-                return method;
-            } catch (NoSuchMethodException ignored) {
-            }
-            try {
-                Method method = owner.getDeclaredMethod(name);
-                method.setAccessible(true);
-                return method;
-            } catch (NoSuchMethodException ignored) {
-            }
-        }
-        throw new NoSuchMethodException("No method found on " + owner.getName());
     }
 }

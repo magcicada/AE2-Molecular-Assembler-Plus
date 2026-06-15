@@ -1,33 +1,39 @@
 package com.gasai.ccapplied.items;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.gasai.ccapplied.core.registry.CCItems;
+import com.gasai.ccapplied.core.registry.CCOptionalMods;
+import com.gasai.ccapplied.patterns.DraconicFusionPattern;
+
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import appeng.crafting.pattern.EncodedPatternItem;
-import com.gasai.ccapplied.core.registry.CCItems;
-import com.gasai.ccapplied.core.registry.CCOptionalMods;
-import com.gasai.ccapplied.patterns.DraconicFusionPattern;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-public class DraconicEncodedPatternItem extends EncodedPatternItem {
+public class DraconicEncodedPatternItem extends EncodedPatternItem<IPatternDetails> {
     public static final String NBT_ROOT = "ccapplied_draconic";
     private static final String NBT_INPUTS = "inputs";
     private static final String NBT_OUTPUTS = "outputs";
@@ -36,30 +42,11 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
     private static final String NBT_RECIPE_ID = "recipeId";
 
     public DraconicEncodedPatternItem(Properties props) {
-        super(props);
+        super(props, DraconicEncodedPatternItem::decodeFromKey,
+                (stack, level, exception, flag) -> new appeng.api.crafting.PatternDetailsTooltip(Component.empty()));
     }
 
-    @Override
     public void addToMainCreativeTab(CreativeModeTab.Output output) {
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
-        var root = getRoot(stack);
-        if (root == null) {
-            return;
-        }
-
-        String tier = root.contains(NBT_TIER, Tag.TAG_STRING) ? root.getString(NBT_TIER) : "WYVERN";
-        long energy = root.contains(NBT_TOTAL_ENERGY, Tag.TAG_LONG) ? root.getLong(NBT_TOTAL_ENERGY) : 0L;
-
-        tooltip.add(Component.literal("Fusion Tier: " + prettyTier(tier)).withStyle(ChatFormatting.AQUA));
-        tooltip.add(Component.literal("Energy Cost: " + NumberFormat.getIntegerInstance(Locale.US).format(Math.max(0L, energy)) + " OP")
-                .withStyle(ChatFormatting.GOLD));
-        if (root.contains(NBT_RECIPE_ID, Tag.TAG_STRING)) {
-            tooltip.add(Component.literal("Recipe: " + root.getString(NBT_RECIPE_ID)).withStyle(ChatFormatting.DARK_GRAY));
-        }
     }
 
     public ItemStack encode(
@@ -67,7 +54,8 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
             GenericStack output,
             DraconicFusionPattern.FusionTier tier,
             long totalEnergy,
-            @Nullable ResourceLocation recipeId) {
+            @Nullable ResourceLocation recipeId,
+            HolderLookup.Provider registries) {
         var out = new ItemStack(this);
         var tag = new CompoundTag();
         var root = new CompoundTag();
@@ -75,12 +63,12 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
         var inList = new ListTag();
         for (int i = 0; i < DraconicFusionPattern.TOTAL_INPUT_SLOTS; i++) {
             var gs = i < inputs13.length ? inputs13[i] : null;
-            inList.add(gs == null ? new CompoundTag() : writeGenericItem(gs));
+            inList.add(writeGenericItem(gs, registries));
         }
         root.put(NBT_INPUTS, inList);
 
         var outList = new ListTag();
-        outList.add(writeGenericItem(output));
+        outList.add(writeGenericItem(output, registries));
         root.put(NBT_OUTPUTS, outList);
 
         root.putString(NBT_TIER, tier.name());
@@ -90,17 +78,17 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
         }
 
         tag.put(NBT_ROOT, root);
-        out.setTag(tag);
+        CustomData.set(DataComponents.CUSTOM_DATA, out, tag);
         return out;
     }
 
-    @Override
-    public @Nullable IPatternDetails decode(ItemStack stack, Level level, boolean tryRecovery) {
-        if (!stack.hasTag()) {
-            return null;
-        }
-        var tag = stack.getTag();
-        if (tag == null || !tag.contains(NBT_ROOT, Tag.TAG_COMPOUND)) {
+    private static @Nullable IPatternDetails decodeFromKey(AEItemKey what, Level level) {
+        return decodeStack(what.toStack(), level);
+    }
+
+    public static @Nullable IPatternDetails decodeStack(ItemStack stack, Level level) {
+        var tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!tag.contains(NBT_ROOT, Tag.TAG_COMPOUND)) {
             return null;
         }
 
@@ -113,12 +101,12 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
 
         var inputs = new GenericStack[DraconicFusionPattern.TOTAL_INPUT_SLOTS];
         for (int i = 0; i < Math.min(inList.size(), inputs.length); i++) {
-            inputs[i] = readGenericItem(inList.getCompound(i));
+            inputs[i] = readGenericItem(inList.getCompound(i), level);
         }
 
         var outputs = new ArrayList<GenericStack>();
         for (int i = 0; i < outList.size(); i++) {
-            var gs = readGenericItem(outList.getCompound(i));
+            var gs = readGenericItem(outList.getCompound(i), level);
             if (gs != null) {
                 outputs.add(gs);
             }
@@ -165,15 +153,12 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
                 recipeId);
     }
 
-    @Override
     public @Nullable IPatternDetails decode(AEItemKey what, Level level) {
-        return decode(what.toStack(), level, false);
+        return decodeStack(what.toStack(), level);
     }
 
-    @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
-
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide) {
                 if (CCOptionalMods.isDraconicEvolutionLoaded() && CCItems.DRACONIC_BLANK_PATTERN != null) {
@@ -183,56 +168,41 @@ public class DraconicEncodedPatternItem extends EncodedPatternItem {
             }
             return InteractionResultHolder.success(stack);
         }
-
         return super.use(level, player, hand);
     }
 
-    private static CompoundTag writeGenericItem(GenericStack gs) {
-        var t = new CompoundTag();
-        var key = (AEItemKey) gs.what();
-        t.putString("item", key.getId().toString());
-        t.putLong("amount", gs.amount());
-        try {
-            var stack = key.toStack((int) Math.max(1, Math.min(gs.amount(), 64)));
-            if (stack.hasTag()) {
-                t.put("nbt", stack.getTag().copy());
-            }
-        } catch (Exception ignored) {
-        }
-        return t;
+    private static CompoundTag writeGenericItem(@Nullable GenericStack gs, HolderLookup.Provider registries) {
+        return GenericStack.writeTag(registries, gs);
     }
 
-    private static GenericStack readGenericItem(CompoundTag t) {
-        if (t.isEmpty() || !t.contains("item", Tag.TAG_STRING)) {
-            return null;
-        }
-
-        ResourceLocation id;
-        try {
-            id = ResourceLocation.parse(t.getString("item"));
-        } catch (Exception e) {
-            return null;
-        }
-
-        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id);
-        var amount = t.contains("amount", Tag.TAG_LONG) ? t.getLong("amount") : 1L;
-        var stack = new ItemStack(item, (int) Math.max(1, Math.min(amount, 64)));
-        if (t.contains("nbt", Tag.TAG_COMPOUND)) {
+    private static GenericStack readGenericItem(CompoundTag t, @Nullable Level level) {
+        if (level != null) {
             try {
-                stack.setTag(t.getCompound("nbt").copy());
+                return GenericStack.readTag(level.registryAccess(), t);
             } catch (Exception ignored) {
+                return null;
             }
         }
-        var key = AEItemKey.of(stack);
-        return key == null ? null : new GenericStack(key, amount);
+
+        return null;
     }
 
-    private static @Nullable CompoundTag getRoot(ItemStack stack) {
-        var tag = stack.getTag();
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        var tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         if (tag == null || !tag.contains(NBT_ROOT, Tag.TAG_COMPOUND)) {
-            return null;
+            return;
         }
-        return tag.getCompound(NBT_ROOT);
+        var root = tag.getCompound(NBT_ROOT);
+
+        String tier = root.contains(NBT_TIER, Tag.TAG_STRING) ? root.getString(NBT_TIER) : "WYVERN";
+        long energy = root.contains(NBT_TOTAL_ENERGY, Tag.TAG_LONG) ? root.getLong(NBT_TOTAL_ENERGY) : 0L;
+
+        tooltip.add(Component.literal("Fusion Tier: " + prettyTier(tier)).withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.literal("Energy Cost: " + NumberFormat.getIntegerInstance(Locale.US).format(Math.max(0L, energy)) + " OP")
+                .withStyle(ChatFormatting.GOLD));
+        if (root.contains(NBT_RECIPE_ID, Tag.TAG_STRING)) {
+            tooltip.add(Component.literal("Recipe: " + root.getString(NBT_RECIPE_ID)).withStyle(ChatFormatting.DARK_GRAY));
+        }
     }
 
     private static String prettyTier(String tier) {

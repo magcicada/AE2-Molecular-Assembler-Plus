@@ -5,8 +5,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
@@ -30,7 +31,7 @@ public final class DraconicFusionRecipeHelper {
 
         try {
             for (var recipe : level.getRecipeManager().getRecipes()) {
-                var typeId = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+                var typeId = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.value().getType());
                 if (!FUSION_RECIPE_TYPE.equals(typeId)) {
                     continue;
                 }
@@ -47,11 +48,12 @@ public final class DraconicFusionRecipeHelper {
     }
 
     private static @Nullable DraconicFusionRecipeMatch tryMatchFusionRecipe(
-            Recipe<?> recipe,
+            RecipeHolder<?> recipeHolder,
             List<ItemStack> outerInputs,
             ItemStack catalyst,
             Level level) {
         try {
+            Recipe<?> recipe = recipeHolder.value();
             Ingredient catalystIngredient = extractCatalystIngredient(recipe);
             if (catalystIngredient == null || !catalystIngredient.test(catalyst)) {
                 return null;
@@ -88,7 +90,7 @@ public final class DraconicFusionRecipeHelper {
 
             var tier = extractTier(recipe);
             long totalEnergy = extractTotalEnergy(recipe);
-            return new DraconicFusionRecipeMatch(result, catalyst.copy(), outerInputs, tier, totalEnergy, recipe.getId());
+            return new DraconicFusionRecipeMatch(result, catalyst.copy(), outerInputs, tier, totalEnergy, recipeHolder.id());
         } catch (Exception e) {
             return null;
         }

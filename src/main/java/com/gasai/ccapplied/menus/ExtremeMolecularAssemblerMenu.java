@@ -145,9 +145,7 @@ public class ExtremeMolecularAssemblerMenu extends UpgradeableMenu<ExtremeMolecu
             if (pattern != null) {
                 return pattern.isSlotEnabled(slotIndex);
             }
-            return mac.getHost().isTieredDraconicAssembler()
-                    ? slotIndex >= 0 && slotIndex < DraconicFusionPattern.TOTAL_INPUT_SLOTS
-                    : slotIndex >= 0 && slotIndex < 81;
+            return false;
         }
 
         @Override

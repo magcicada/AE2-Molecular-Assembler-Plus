@@ -46,11 +46,10 @@ public class ExtremeMolecularAssemblerBlock extends AEBaseEntityBlock<ExtremeMol
     }
 
     @Override
-    public InteractionResult onActivated(Level level, BlockPos pos, Player player, InteractionHand hand,
-            @Nullable ItemStack heldItem, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+            BlockHitResult hit) {
         var be = this.getBlockEntity(level, pos);
         if (be != null) {
-
             if (!InteractionUtil.isInAlternateUseMode(player)) {
                 if (!level.isClientSide()) {
                     MenuOpener.open(CCMenuTypes.EXTREME_MOLECULAR_ASSEMBLER.get(), player,
@@ -62,5 +61,4 @@ public class ExtremeMolecularAssemblerBlock extends AEBaseEntityBlock<ExtremeMol
 
         return InteractionResult.PASS;
     }
-    
 }

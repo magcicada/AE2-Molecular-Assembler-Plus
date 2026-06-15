@@ -1,6 +1,6 @@
 # AE2 Molecular Assembler Plus
 
-AE2 Molecular Assembler Plus is a Forge addon for Minecraft 1.20.1 that extends Applied Energistics 2 auto-crafting with universal pattern encoding and dedicated assemblers for modded crafting workflows.
+AE2 Molecular Assembler Plus is a NeoForge addon for Minecraft 1.21.1 that extends Applied Energistics 2 auto-crafting with universal pattern encoding and dedicated assemblers for modded crafting workflows.
 
 The mod is not limited to 9x9 recipes. It can support different recipe shapes, station layouts, tiers, catalysts, energy costs, and other requirements from supported mods.
 
@@ -20,12 +20,12 @@ AE2 is the base mod. Everything else in this table is optional: AE2 Molecular As
 
 | Mod | Version | Pattern Terminal | JEI `+` Transfer | Conditional Recipes | Links |
 | --- | --- | --- | --- | --- | --- |
-| Applied Energistics 2 | 1.20.1, AE2 15.4.8+ | Core mod | Vanilla crafting recipes | Base AE2 recipes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2), [Modrinth](https://modrinth.com/mod/ae2) |
-| Extended Crafting | 1.20.1, 6.0.10+ | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting), [Modrinth](https://modrinth.com/mod/extended-crafting) |
-| Extended Crafting: Expanded | 1.20.1 | Partial | Via Extended Crafting categories | Via Extended Crafting ids | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting-expanded) |
-| Re:Avaritia | 1.20.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/re-avaritia), [Modrinth](https://modrinth.com/mod/re-avaritia) |
-| AvaritiaNeo | 1.20.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/avaritianeo) |
-| Extended Terminal | 1.20.1 | No | No | No | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-terminal), [Modrinth](https://modrinth.com/mod/extended-terminal) |
+| Applied Energistics 2 | 1.21.1, AE2 19.2.17+ | Core mod | Vanilla crafting recipes | Base AE2 recipes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2), [Modrinth](https://modrinth.com/mod/ae2) |
+| Extended Crafting | 1.21.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting), [Modrinth](https://modrinth.com/mod/extended-crafting) |
+| Extended Crafting: Expanded | 1.21.1 | Partial | Via Extended Crafting categories | Via Extended Crafting ids | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-crafting-expanded) |
+| Re:Avaritia | 1.21.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/re-avaritia), [Modrinth](https://modrinth.com/mod/re-avaritia) |
+| AvaritiaNeo | 1.21.1 | Yes | Yes | Yes | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/avaritianeo) |
+| Extended Terminal | 1.21.1 | No | No | No | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/extended-terminal), [Modrinth](https://modrinth.com/mod/extended-terminal) |
 
 ## Other Mods
 

@@ -3,14 +3,15 @@ package com.gasai.ccapplied.core.client;
 import appeng.api.util.AEColor;
 import com.gasai.ccapplied.core.registry.CCItems;
 import com.gasai.ccapplied.core.registry.CCOptionalMods;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterColorHandlersEvent;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.util.FastColor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientInit {
     private ClientInit() {}
 
@@ -18,7 +19,6 @@ public final class ClientInit {
     public static void onClientSetup(FMLClientSetupEvent e) {
         e.enqueueWork(() -> {
             InitRenderTypes.init();
-            
             InitBlockEntityRenderers.init();
         });
         
@@ -32,11 +32,11 @@ public final class ClientInit {
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
         event.register(
-                (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
+                (stack, tintIndex) -> FastColor.ARGB32.opaque(AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex)),
                 CCItems.EXTREME_PATTERN_TERMINAL.get());
         if (CCOptionalMods.isDraconicEvolutionLoaded()) {
             event.register(
-                    (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex),
+                    (stack, tintIndex) -> FastColor.ARGB32.opaque(AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex)),
                     CCItems.DRACONIC_PATTERN_TERMINAL.get());
         }
     }

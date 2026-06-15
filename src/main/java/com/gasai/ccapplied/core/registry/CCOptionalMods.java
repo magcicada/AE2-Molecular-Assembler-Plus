@@ -1,7 +1,7 @@
 package com.gasai.ccapplied.core.registry;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.LoadingModList;
 
 public final class CCOptionalMods {
     public static final String DRACONIC_EVOLUTION = "draconicevolution";

@@ -13,6 +13,7 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<ExtremePatternEncodingTermMenu, Object> {
     private final RecipeType<Object> type;
@@ -49,9 +50,10 @@ public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<Extrem
         int h;
 
         try {
-            Integer width = invokeInt(recipe, "getWidth");
-            Integer height = invokeInt(recipe, "getHeight");
-            var ingredients = getIngredients(recipe);
+            Object actualRecipe = unwrapRecipe(recipe);
+            Integer width = invokeInt(actualRecipe, "getWidth", "width", "recipeWidth");
+            Integer height = invokeInt(actualRecipe, "getHeight", "height", "recipeHeight");
+            var ingredients = getIngredients(actualRecipe);
 
             if (width != null && height != null) {
                 w = Math.min(9, width);
@@ -62,6 +64,18 @@ public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<Extrem
                     inputs.add(firstStack(ing));
                 }
             } else {
+                int square = (int) Math.round(Math.sqrt(ingredients.size()));
+                if (square > 1 && square * square == ingredients.size() && square <= 9) {
+                    w = square;
+                    h = square;
+                    inputs = new ArrayList<>(w * h);
+                    for (int i = 0; i < w * h; i++) {
+                        var ing = i < ingredients.size() ? ingredients.get(i) : Ingredient.EMPTY;
+                        inputs.add(firstStack(ing));
+                    }
+                    menu.requestApplyJeiGrid(w, h, inputs);
+                    return null;
+                }
                 for (var ing : ingredients) {
                     if (!ing.isEmpty()) {
                         inputs.add(firstStack(ing));
@@ -79,6 +93,13 @@ public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<Extrem
         return null;
     }
 
+    private static Object unwrapRecipe(Object recipe) {
+        if (recipe instanceof RecipeHolder<?> holder) {
+            return holder.value();
+        }
+        return recipe;
+    }
+
     private static ItemStack firstStack(Ingredient ingredient) {
         if (ingredient.isEmpty()) {
             return ItemStack.EMPTY;
@@ -90,7 +111,7 @@ public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<Extrem
 
     private static List<Ingredient> getIngredients(Object recipe) {
         try {
-            Method method = recipe.getClass().getMethod("getIngredients");
+            Method method = findMethod(recipe.getClass(), "getIngredients", "ingredients");
             Object value = method.invoke(recipe);
             if (value instanceof List<?> rawList) {
                 var ingredients = new ArrayList<Ingredient>(rawList.size());
@@ -107,13 +128,37 @@ public class ECJeiRecipeTransferHandler implements IRecipeTransferHandler<Extrem
         return List.of();
     }
 
-    private static Integer invokeInt(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            Object value = method.invoke(target);
-            return value instanceof Number number ? number.intValue() : null;
-        } catch (ReflectiveOperationException e) {
-            return null;
+    private static Integer invokeInt(Object target, String... methodNames) {
+        for (String methodName : methodNames) {
+            try {
+                Method method = findMethod(target.getClass(), methodName);
+                Object value = method.invoke(target);
+                return value instanceof Number number ? number.intValue() : null;
+            } catch (ReflectiveOperationException ignored) {
+            }
         }
+        return null;
+    }
+
+    private static Method findMethod(Class<?> owner, String... names) throws NoSuchMethodException {
+        Class<?> current = owner;
+        while (current != null) {
+            for (String name : names) {
+                try {
+                    Method method = current.getMethod(name);
+                    method.setAccessible(true);
+                    return method;
+                } catch (NoSuchMethodException ignored) {
+                }
+                try {
+                    Method method = current.getDeclaredMethod(name);
+                    method.setAccessible(true);
+                    return method;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+            current = current.getSuperclass();
+        }
+        throw new NoSuchMethodException("No recipe method found on " + owner.getName());
     }
 }

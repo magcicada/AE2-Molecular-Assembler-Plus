@@ -13,6 +13,8 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import com.gasai.ccapplied.core.registry.CCItems;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Pattern for extreme crafting 9x9 - items only, shaped/unshaped
@@ -62,8 +64,8 @@ public class ExtremeCraftingPattern implements IPatternDetails, IMolecularAssemb
     }
     
     @Override
-    public GenericStack[] getOutputs() {
-        return outputs;
+    public List<GenericStack> getOutputs() {
+        return Arrays.asList(outputs);
     }
     
     private IInput[] createInputs(GenericStack[] sparseInputs) {
@@ -152,7 +154,7 @@ public class ExtremeCraftingPattern implements IPatternDetails, IMolecularAssemb
             if (!patternStack.isEmpty()) {
                 ItemStack containerStack = container.getItem(i);
                 if (containerStack.isEmpty() || 
-                    !ItemStack.isSameItemSameTags(patternStack, containerStack) ||
+                    !ItemStack.isSameItemSameComponents(patternStack, containerStack) ||
                     containerStack.getCount() < patternStack.getCount()) {
                     return ItemStack.EMPTY;
                 }
@@ -228,19 +230,22 @@ public class ExtremeCraftingPattern implements IPatternDetails, IMolecularAssemb
             if (!patternStack.isEmpty()) {
                 AEItemKey patternKey = AEItemKey.of(patternStack);
                 if (patternKey != null) {
+                    boolean filled = false;
                     for (KeyCounter counter : table) {
                         if (counter != null && !counter.isEmpty()) {
-                            var entry = counter.iterator().next();
-                            if (entry.getKey() instanceof AEItemKey itemKey && 
-                                itemKey.equals(patternKey) && 
-                                entry.getLongValue() >= patternStack.getCount()) {
-                                
-                                ItemStack stack = itemKey.toStack(patternStack.getCount());
-                                gridAccessor.set(i, stack);
-                                
-                                counter.remove(itemKey, patternStack.getCount());
-                                break;
+                            for (var entry : counter) {
+                                if (entry.getKey() instanceof AEItemKey itemKey
+                                        && itemKey.equals(patternKey)
+                                        && entry.getLongValue() >= patternStack.getCount()) {
+                                    gridAccessor.set(i, itemKey.toStack(patternStack.getCount()));
+                                    counter.remove(itemKey, patternStack.getCount());
+                                    filled = true;
+                                    break;
+                                }
                             }
+                        }
+                        if (filled) {
+                            break;
                         }
                     }
                 }

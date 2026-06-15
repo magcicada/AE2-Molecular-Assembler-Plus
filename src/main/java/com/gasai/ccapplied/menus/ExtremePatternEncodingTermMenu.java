@@ -28,7 +28,7 @@ import java.util.List;
  * Only "crafting" mode: inputs[81] + output[1].
  */
 
-public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements appeng.helpers.IMenuCraftingPacket, appeng.util.inv.InternalInventoryHost {
+public class ExtremePatternEncodingTermMenu extends MEStorageMenu {
 
     public static final int GRID = 9;
     public static final int SLOTS = GRID * GRID;
@@ -49,7 +49,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
     private final FakeSlot[] inputSlots = new FakeSlot[SLOTS];
     private final ExtremeCraftingTermSlot outputSlot;
     
-    private final appeng.util.inv.AppEngInternalInventory craftingMatrix;
+    private final InternalInventory craftingMatrix;
 
     private final Slot blankPatternSlot;
     private final Slot encodedPatternSlot;
@@ -81,13 +81,12 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         this.encodedInputsInv  = logic.getEncodedInputInv();
         this.encodedOutputsInv = logic.getEncodedOutputInv();
         
-        this.craftingMatrix = new appeng.util.inv.AppEngInternalInventory(this, SLOTS);
-
         var inputsWrapper  = encodedInputsInv.createMenuWrapper();
         var outputsWrapper = encodedOutputsInv.createMenuWrapper();
+        this.craftingMatrix = inputsWrapper.getSubInventory(0, SLOTS);
 
         for (int i = 0; i < SLOTS; i++) {
-            var fs = new FakeSlot(craftingMatrix, i);
+            var fs = new FakeSlot(inputsWrapper, i);
             fs.setHideAmount(true);
             this.inputSlots[i] = fs;
             this.addSlot(fs, SlotSemantics.CRAFTING_GRID);
@@ -96,10 +95,9 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         var out = new ExtremeCraftingTermSlot(
             inv.player, 
             this.getActionSource(), 
-            this.powerSource,
+            this.energySource,
             host.getInventory(), 
             craftingMatrix,
-            this,
             outputsWrapper, 
             0
         );
@@ -117,10 +115,6 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
 
         registerClientAction(ACTION_ENCODE, this::encode);
         registerClientAction(ACTION_CLEAR,  this::clearAll);
-        registerClientAction("jei_apply_grid", JeiGridData.class, data -> {
-            if (isClientSide()) return;
-            applyCenteredGridFromClient(data.width, data.height, data.items);
-        });
         registerClientAction("extremeEncodePattern", this::extremeEncodePattern);
         registerClientAction("extremeClearPattern", this::extremeClearPattern);
         registerClientAction("extremeCraftingClearPattern", this::extremeCraftingClearPattern);
@@ -130,14 +124,10 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         this.patternInputCount = 0;
         this.patternOutputCount = 0;
 
-        if (!isClientSide()) {
-            loadCraftingMatrixFromLogic();
-        }
     }
 
     /* -------------------- update methods -------------------- */
     
-    @Override
     public void setItem(int slotID, int stateId, ItemStack stack) {
         super.setItem(slotID, stateId, stack);
     }
@@ -210,7 +200,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             if (!stack.isEmpty()) {
                 var key = appeng.api.stacks.AEItemKey.of(stack);
                 if (key != null && idx < DraconicFusionPattern.OUTER_SLOTS) {
-                    inputs[idx++] = new appeng.api.stacks.GenericStack(key, 1);
+                    inputs[idx++] = new appeng.api.stacks.GenericStack(key, Math.max(1, stack.getCount()));
                 }
             }
         }
@@ -220,7 +210,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         if (catalystKey == null) {
             return;
         }
-        inputs[DraconicFusionPattern.OUTER_SLOTS] = new appeng.api.stacks.GenericStack(catalystKey, 1);
+        inputs[DraconicFusionPattern.OUTER_SLOTS] = new appeng.api.stacks.GenericStack(catalystKey, Math.max(1, catalyst.getCount()));
 
         var outKey = appeng.api.stacks.AEItemKey.of(match.result());
         if (outKey == null) {
@@ -246,7 +236,6 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         
     }
 
-    @Override
     public void broadcastChanges() {
         super.broadcastChanges();
         
@@ -353,24 +342,10 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
     
 
 
-    @Override
-    protected ItemStack transferStackToMenu(ItemStack input) {
-        if (blankPatternSlot.mayPlace(input)) {
-            input = blankPatternSlot.safeInsert(input);
-            if (input.isEmpty()) return ItemStack.EMPTY;
-        }
-        if (encodedPatternSlot.mayPlace(input)) {
-            input = encodedPatternSlot.safeInsert(input);
-            if (input.isEmpty()) return ItemStack.EMPTY;
-        }
-        return super.transferStackToMenu(input);
-    }
-
-    @Override public InternalInventory getCraftingMatrix() {
+    public InternalInventory getCraftingMatrix() {
         return encodedInputsInv.createMenuWrapper().getSubInventory(0, SLOTS);
     }
 
-    @Override
     public boolean useRealItems() {
         return false;
     }
@@ -418,7 +393,6 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         return SLOTS;
     }
 
-    @Override
     public void onSlotChange(Slot slot) {
         if (slot instanceof FakeSlot && isInputSlot(slot)) {
             if (!isClientSide()) {
@@ -444,8 +418,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             if (!patternStack.isEmpty()) {
                 var encodingLogic = ((com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost) getHost()).getLogic();
                 encodingLogic.loadPatternIntoMatrix(craftingMatrix, patternStack);
-            } else {
-                clearAll();
+                broadcastChanges();
             }
         }
     }
@@ -464,6 +437,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
 
     /** Data for JEI transfer (Gson-friendly DTO) */
     public static class JeiGridData {
+        private static final com.google.gson.Gson GSON = new com.google.gson.Gson();
         public final int width;
         public final int height;
         public final java.util.List<JeiItem> items;
@@ -472,6 +446,18 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             this.width = width;
             this.height = height;
             this.items = items;
+        }
+
+        public String toPayload() {
+            return GSON.toJson(this);
+        }
+
+        public static JeiGridData fromPayload(String payload) {
+            try {
+                return GSON.fromJson(payload, JeiGridData.class);
+            } catch (Exception ignored) {
+                return null;
+            }
         }
     }
 
@@ -484,34 +470,41 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         }
     }
 
-    private void applyCenteredGridFromClient(int w, int h, java.util.List<JeiItem> items) {
-        if (isClientSide()) return;
-        if (w <= 0 || h <= 0) return;
-        final boolean isShapeless = w == 1;
-        if (!isShapeless && (w > GRID || h > GRID)) return;
-
-        try {
-            for (int i = 0; i < SLOTS; i++) {
-                craftingMatrix.extractItem(i, Integer.MAX_VALUE, false);
-                craftingMatrix.insertItem(i, ItemStack.EMPTY, false);
-                encodedInputsInv.setStack(i, null);
-            }
-            logic.getEncodedInputInv().beginBatch();
-            for (int i = 0; i < SLOTS; i++) logic.getEncodedInputInv().setStack(i, null);
-            logic.getEncodedInputInv().endBatch();
-        } catch (Exception e) {
-        }
-
+    private java.util.List<ItemStack> decodeJeiItems(java.util.List<JeiItem> items) {
         java.util.List<ItemStack> decoded = new java.util.ArrayList<>(items.size());
         for (var ji : items) {
             ItemStack st = ItemStack.EMPTY;
             try {
                 var tag = net.minecraft.nbt.TagParser.parseTag(ji.snbt);
                 if (tag instanceof net.minecraft.nbt.CompoundTag) {
-                    st = ItemStack.of((net.minecraft.nbt.CompoundTag) tag);
+                    st = ItemStack.parseOptional(getPlayer().registryAccess(), (net.minecraft.nbt.CompoundTag) tag);
                 }
             } catch (Exception ignored) { }
             decoded.add(st);
+        }
+        return decoded;
+    }
+
+    private void applyCenteredGridStacks(int w, int h, java.util.List<ItemStack> decoded, boolean updateEncodedInputs) {
+        if (w <= 0 || h <= 0) return;
+        final boolean isShapeless = w == 1;
+        if (!isShapeless && (w > GRID || h > GRID)) return;
+
+        try {
+            for (int i = 0; i < SLOTS; i++) {
+                setFilterSlot(i, ItemStack.EMPTY);
+                if (updateEncodedInputs) {
+                    encodedInputsInv.setStack(i, null);
+                }
+            }
+            if (updateEncodedInputs) {
+                logic.getEncodedInputInv().beginBatch();
+                for (int i = 0; i < SLOTS; i++) {
+                    logic.getEncodedInputInv().setStack(i, null);
+                }
+                logic.getEncodedInputInv().endBatch();
+            }
+        } catch (Exception e) {
         }
 
         if (isShapeless) {
@@ -522,10 +515,12 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
                 int x = i % GRID;
                 int y = i / GRID;
                 int cmIndex = x + y * GRID;
-                craftingMatrix.insertItem(cmIndex, st.copy(), false);
-                var key = appeng.api.stacks.AEItemKey.of(st);
-                if (key != null) {
-                    encodedInputsInv.setStack(cmIndex, new appeng.api.stacks.GenericStack(key, st.getCount()));
+                setFilterSlot(cmIndex, st.copy());
+                if (updateEncodedInputs) {
+                    var key = appeng.api.stacks.AEItemKey.of(st);
+                    if (key != null) {
+                        encodedInputsInv.setStack(cmIndex, new appeng.api.stacks.GenericStack(key, st.getCount()));
+                    }
                 }
             }
         } else {
@@ -539,10 +534,12 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
                     if (st != null && !st.isEmpty()) {
                         int cmIndex = (startX + x) + (startY + y) * GRID;
                         if (cmIndex >= 0 && cmIndex < SLOTS) {
-                            craftingMatrix.insertItem(cmIndex, st.copy(), false);
-                            var key = appeng.api.stacks.AEItemKey.of(st);
-                            if (key != null) {
-                                encodedInputsInv.setStack(cmIndex, new appeng.api.stacks.GenericStack(key, st.getCount()));
+                            setFilterSlot(cmIndex, st.copy());
+                            if (updateEncodedInputs) {
+                                var key = appeng.api.stacks.AEItemKey.of(st);
+                                if (key != null) {
+                                    encodedInputsInv.setStack(cmIndex, new appeng.api.stacks.GenericStack(key, st.getCount()));
+                                }
                             }
                         }
                     }
@@ -550,19 +547,20 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             }
         }
 
-        var encodingLogic = ((com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost) getHost()).getLogic();
-        encodingLogic.fixExtremeCraftingGrid();
+        if (updateEncodedInputs) {
+            var encodingLogic = ((com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost) getHost()).getLogic();
+            encodingLogic.fixExtremeCraftingGrid();
+            broadcastChanges();
+        }
+    }
+
+    private void applyCenteredGridFromClient(int w, int h, java.util.List<JeiItem> items) {
+        if (isClientSide()) return;
+        applyCenteredGridStacks(w, h, decodeJeiItems(items), true);
     }
 
     public void requestApplyJeiGrid(int w, int h, java.util.List<ItemStack> items) {
-        var list = new java.util.ArrayList<JeiItem>(items.size());
-        for (var st : items) {
-            if (st == null || st.isEmpty()) { list.add(new JeiItem("{}")); continue; }
-            var tag = new net.minecraft.nbt.CompoundTag();
-            st.save(tag);
-            list.add(new JeiItem(tag.toString()));
-        }
-        sendClientAction("jei_apply_grid", new JeiGridData(w, h, list));
+        sendGridFilters(w, h, items);
     }
 
     private void loadCraftingMatrixFromLogic() {
@@ -570,25 +568,70 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
             for (int i = 0; i < SLOTS; i++) {
                 var gs = encodedInputsInv.getStack(i);
                 if (gs == null || !appeng.api.stacks.AEItemKey.is(gs.what())) {
-                    craftingMatrix.insertItem(i, ItemStack.EMPTY, false);
+                    setFilterSlot(i, ItemStack.EMPTY);
                     continue;
                 }
                 var key = (appeng.api.stacks.AEItemKey) gs.what();
                 int amount = (int) Math.max(1, Math.min(gs.amount(), 64));
                 ItemStack st = key.toStack(amount);
-                craftingMatrix.insertItem(i, st, false);
+                setFilterSlot(i, st);
             }
         } catch (Exception e) {
         }
     }
+
+    private void setFilterSlot(int slot, ItemStack stack) {
+        craftingMatrix.extractItem(slot, Integer.MAX_VALUE, false);
+        if (stack != null && !stack.isEmpty()) {
+            craftingMatrix.insertItem(slot, stack.copy(), false);
+        }
+    }
+
+    private void sendGridFilters(int w, int h, java.util.List<ItemStack> items) {
+        if (w <= 0 || h <= 0) return;
+        final boolean isShapeless = w == 1;
+        if (!isShapeless && (w > GRID || h > GRID)) return;
+
+        for (int i = 0; i < SLOTS; i++) {
+            sendSetFilter(inputSlots[i], ItemStack.EMPTY);
+        }
+
+        if (isShapeless) {
+            int limit = Math.min(items.size(), SLOTS);
+            for (int i = 0; i < limit; i++) {
+                ItemStack st = items.get(i);
+                if (st == null || st.isEmpty()) continue;
+                sendSetFilter(inputSlots[i], st.copy());
+            }
+        } else {
+            int startX = (GRID - w) / 2;
+            int startY = (GRID - h) / 2;
+            int idx = 0;
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    if (idx >= items.size()) break;
+                    ItemStack st = items.get(idx++);
+                    if (st == null || st.isEmpty()) continue;
+                    int cmIndex = (startX + x) + (startY + y) * GRID;
+                    if (cmIndex >= 0 && cmIndex < SLOTS) {
+                        sendSetFilter(inputSlots[cmIndex], st.copy());
+                    }
+                }
+            }
+        }
+    }
+
+    private static void sendSetFilter(FakeSlot slot, ItemStack stack) {
+        appeng.core.network.ServerboundPacket message = new appeng.core.network.serverbound.InventoryActionPacket(
+                appeng.helpers.InventoryAction.SET_FILTER, slot.index, stack);
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(message);
+    }
     
 
-    @Override
     public List<ItemStack> getViewCells() {
         return List.of();
     }
 
-    @Override
     public appeng.api.networking.IGridNode getNetworkNode() {
         if (getTarget() instanceof appeng.api.parts.IPart part) {
             return part.getGridNode();
@@ -620,16 +663,4 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu implements app
         clearAll();
     }
     
-    @Override
-    public void onChangeInventory(appeng.api.inventories.InternalInventory inv, int slot) {
-        if (inv == craftingMatrix) {
-        }
-    }
-    
-    @Override
-    public void saveChanges() {
-        if (craftingMatrix != null) {
-        }
-    }
-
 }

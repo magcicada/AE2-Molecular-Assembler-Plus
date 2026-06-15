@@ -2,8 +2,8 @@ package com.gasai.ccapplied.core.client;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.gasai.ccapplied.core.registry.CCBlocks;
 import com.gasai.ccapplied.core.registry.CCOptionalMods;

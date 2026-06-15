@@ -6,7 +6,6 @@ import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.storage.MEStorage;
-import appeng.helpers.IMenuCraftingPacket;
 import appeng.menu.slot.FakeSlot;
 
 /**
@@ -20,8 +19,8 @@ public class ExtremeCraftingTermSlot extends FakeSlot {
     
     
     public ExtremeCraftingTermSlot(Player player, IActionSource actionSource, IEnergySource energySource,
-                                  MEStorage storage, InternalInventory craftingMatrix, 
-                                  IMenuCraftingPacket menu, InternalInventory inventory, int slot) {
+                                  MEStorage storage, InternalInventory craftingMatrix,
+                                  InternalInventory inventory, int slot) {
         super(inventory, slot);
         this.player = player;
         this.craftingMatrix = craftingMatrix;

@@ -5,12 +5,13 @@ import java.util.Set;
 import appeng.menu.AutoCraftingMenu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -59,15 +60,19 @@ public class ExtendedCraftingRecipeHelper {
     }
 
     public static boolean isExtendedCraftingRecipe(CraftingRecipe recipe) {
-        return false;
+        if (recipe == null) {
+            return false;
+        }
+        ResourceLocation typeId = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+        return isSupportedGenericExtremeRecipeType(typeId);
     }
 
     private static @Nullable ExtremeRecipeMatch findGenericExtremeRecipe(ItemStack[] craftingGrid, Level level) {
-        var container = toCraftingContainer(craftingGrid);
+        var container = toCraftingInput(craftingGrid);
 
         try {
             for (var recipe : level.getRecipeManager().getRecipes()) {
-                ResourceLocation typeId = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+                ResourceLocation typeId = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.value().getType());
                 if (!isSupportedGenericExtremeRecipeType(typeId)) {
                     continue;
                 }
@@ -75,7 +80,7 @@ public class ExtendedCraftingRecipeHelper {
                 if (matchesRecipe(recipe, container, level)) {
                     ItemStack result = getRecipeResult(recipe, container, level);
                     if (!result.isEmpty()) {
-                        return new ExtremeRecipeMatch(result, recipe.getId(), typeId.getNamespace());
+                        return new ExtremeRecipeMatch(result, recipe.id(), typeId.getNamespace());
                     }
                 }
             }
@@ -111,26 +116,27 @@ public class ExtendedCraftingRecipeHelper {
         return true;
     }
 
-    private static TransientCraftingContainer toCraftingContainer(ItemStack[] craftingGrid) {
-        var container = new TransientCraftingContainer(new AutoCraftingMenu(), 9, 9);
-        for (int i = 0; i < Math.min(craftingGrid.length, container.getContainerSize()); i++) {
-            ItemStack stack = craftingGrid[i];
-            container.setItem(i, stack == null ? ItemStack.EMPTY : stack.copy());
+    private static CraftingInput toCraftingInput(ItemStack[] craftingGrid) {
+        java.util.List<ItemStack> items = new java.util.ArrayList<>(81);
+        for (int i = 0; i < 81; i++) {
+            ItemStack stack = i < craftingGrid.length && craftingGrid[i] != null ? craftingGrid[i] : ItemStack.EMPTY;
+            items.add(stack.copy());
         }
-        return container;
+        return CraftingInput.of(9, 9, items);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static boolean matchesRecipe(Recipe recipe, TransientCraftingContainer container, Level level) {
+    private static boolean matchesRecipe(RecipeHolder recipeHolder, CraftingInput container, Level level) {
         try {
-            return recipe.matches(container, level);
+            return ((Recipe) recipeHolder.value()).matches(container, level);
         } catch (Exception e) {
             return false;
         }
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static ItemStack getRecipeResult(Recipe recipe, TransientCraftingContainer container, Level level) {
+    private static ItemStack getRecipeResult(RecipeHolder recipeHolder, CraftingInput container, Level level) {
+        Recipe recipe = (Recipe) recipeHolder.value();
         try {
             ItemStack assembled = recipe.assemble(container, level.registryAccess());
             if (!assembled.isEmpty()) {

@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.chat.Component;
@@ -33,25 +32,13 @@ public final class CCAppliedInitScreens {
             String stylePath) {
         
         SCREEN_FACTORIES.put(type, factory);
-        
-        MenuScreens.<M, U>register(type, (menu, playerInv, title) -> {
-            
-            try {
-                var style = StyleManager.loadStyleDoc(stylePath);
-                
-                @SuppressWarnings("unchecked")
-                ScreenFactory<M, U> typedFactory = (ScreenFactory<M, U>) SCREEN_FACTORIES.get(type);
-                if (typedFactory == null) {
-                    throw new IllegalStateException("No factory registered for menu type: " + type);
-                }
-                
-                var screen = typedFactory.create(menu, playerInv, title, style);
-                return screen;
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to create screen", e);
-            }
-        });
-        
+    }
+
+    public static <M extends AbstractContainerMenu, U extends Screen & MenuAccess<M>> ScreenFactory<M, U> get(
+            MenuType<M> type) {
+        @SuppressWarnings("unchecked")
+        ScreenFactory<M, U> factory = (ScreenFactory<M, U>) SCREEN_FACTORIES.get(type);
+        return factory;
     }
     
     /**
@@ -62,4 +49,3 @@ public final class CCAppliedInitScreens {
         U create(T menu, Inventory playerInv, Component title, ScreenStyle style);
     }
 }
-

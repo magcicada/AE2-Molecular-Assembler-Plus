@@ -2,6 +2,7 @@ package com.gasai.ccapplied.parts;
 
 import com.gasai.ccapplied.core.registry.CCItems;
 import com.gasai.ccapplied.core.registry.CCOptionalMods;
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,10 +38,14 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
 
     private final com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost host;
 
-    private final ConfigInventory encodedInputInv = ConfigInventory.configStacks(
-            null, MAX_INPUT_SLOTS, this::onEncodedInputChanged, true);
-    private final ConfigInventory encodedOutputInv = ConfigInventory.configStacks(
-            null, MAX_OUTPUT_SLOTS, this::onEncodedOutputChanged, true);
+    private final ConfigInventory encodedInputInv = ConfigInventory.configStacks(MAX_INPUT_SLOTS)
+            .changeListener(this::onEncodedInputChanged)
+            .allowOverstacking(true)
+            .build();
+    private final ConfigInventory encodedOutputInv = ConfigInventory.configStacks(MAX_OUTPUT_SLOTS)
+            .changeListener(this::onEncodedOutputChanged)
+            .allowOverstacking(true)
+            .build();
 
     private final AppEngInternalInventory blankPatternInv = new AppEngInternalInventory(this, 1);
     private final AppEngInternalInventory encodedPatternInv = new AppEngInternalInventory(this, 1);
@@ -67,7 +72,7 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
     }
 
     @Override
-    public void onChangeInventory(InternalInventory inv, int slot) {
+    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
         if (inv == this.encodedPatternInv) {
             loadEncodedPattern(this.encodedPatternInv.getStackInSlot(0));
         }
@@ -75,6 +80,10 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
     }
 
     @Override
+    public void saveChangedInventory(AppEngInternalInventory inv) {
+        saveChanges();
+    }
+
     public void saveChanges() {
         if (!isLoading) {
             host.markForSave();
@@ -120,7 +129,7 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
         encodedOutputInv.beginBatch();
         try {
             encodedOutputInv.clear();
-            encodedOutputInv.setStack(0, (outs != null && outs.length > 0) ? outs[0] : null);
+            encodedOutputInv.setStack(0, (outs != null && !outs.isEmpty()) ? outs.get(0) : null);
         } finally {
             encodedOutputInv.endBatch();
         }
@@ -199,7 +208,7 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
 
     /* ===================== NBT ===================== */
 
-    public void readFromNBT(CompoundTag data) {
+    public void readFromNBT(CompoundTag data, Provider provider) {
         isLoading = true;
         try {
             if (data.contains("ext_recipeId", Tag.TAG_STRING)) {
@@ -208,24 +217,24 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
                 this.recipeId = null;
             }
 
-            blankPatternInv.readFromNBT(data, "ext_blankPattern");
-            encodedPatternInv.readFromNBT(data, "ext_encodedPattern");
+            blankPatternInv.readFromNBT(data, "ext_blankPattern", provider);
+            encodedPatternInv.readFromNBT(data, "ext_encodedPattern", provider);
 
-            encodedInputInv.readFromChildTag(data, "ext_encodedInputs");
-            encodedOutputInv.readFromChildTag(data, "ext_encodedOutputs");
+            encodedInputInv.readFromChildTag(data, "ext_encodedInputs", provider);
+            encodedOutputInv.readFromChildTag(data, "ext_encodedOutputs", provider);
         } finally {
             isLoading = false;
         }
     }
 
-    public void writeToNBT(CompoundTag data) {
+    public void writeToNBT(CompoundTag data, Provider provider) {
         if (this.recipeId != null) {
             data.putString("ext_recipeId", this.recipeId.toString());
         }
-        blankPatternInv.writeToNBT(data, "ext_blankPattern");
-        encodedPatternInv.writeToNBT(data, "ext_encodedPattern");
-        encodedInputInv.writeToChildTag(data, "ext_encodedInputs");
-        encodedOutputInv.writeToChildTag(data, "ext_encodedOutputs");
+        blankPatternInv.writeToNBT(data, "ext_blankPattern", provider);
+        encodedPatternInv.writeToNBT(data, "ext_encodedPattern", provider);
+        encodedInputInv.writeToChildTag(data, "ext_encodedInputs", provider);
+        encodedOutputInv.writeToChildTag(data, "ext_encodedOutputs", provider);
     }
 
     /* ===================== Grid validation ===================== */
@@ -297,7 +306,7 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
             inputStacks[i] = encodedInputInv.getStack(i);
         }
 
-        resultPattern = encodedPatternItem.encode(inputStacks, output, recipeId);
+        resultPattern = encodedPatternItem.encode(inputStacks, output, recipeId, host.getLevel().registryAccess());
 
         var existingPattern = encodedPatternInv.getStackInSlot(0);
         if (!existingPattern.isEmpty()) {
@@ -331,7 +340,8 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
 
         var resultPattern = new ItemStack(CCItems.DRACONIC_FUSION_PATTERN.get());
         var encodedPatternItem = (DraconicEncodedPatternItem) resultPattern.getItem();
-        resultPattern = encodedPatternItem.encode(inputs13, output, tier, totalEnergy, fusionRecipeId);
+        resultPattern = encodedPatternItem.encode(inputs13, output, tier, totalEnergy, fusionRecipeId,
+                host.getLevel().registryAccess());
 
         var existingPattern = encodedPatternInv.getStackInSlot(0);
         if (!existingPattern.isEmpty()) {
@@ -400,13 +410,43 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
         }
     }
 
+    public void loadDraconicPatternIntoMatrix(InternalInventory craftingMatrix, ItemStack patternStack) {
+        if (patternStack.isEmpty()) {
+            return;
+        }
+
+        var details = PatternDetailsHelper.decodePattern(patternStack, host.getLevel());
+        if (!(details instanceof DraconicFusionPattern draconic)) {
+            return;
+        }
+
+        for (int i = 0; i < Math.min(DraconicFusionPattern.TOTAL_INPUT_SLOTS, craftingMatrix.size()); i++) {
+            craftingMatrix.extractItem(i, Integer.MAX_VALUE, false);
+        }
+
+        var inputStacks = draconic.getInputStacks();
+        for (int i = 0; i < Math.min(craftingMatrix.size(), inputStacks.length); i++) {
+            if (inputStacks[i] != null && !inputStacks[i].isEmpty()) {
+                craftingMatrix.insertItem(i, inputStacks[i].copy(), false);
+            }
+        }
+
+        loadDraconicFusionPattern(draconic);
+    }
+
     
     public void fillFromCraftingMatrix(InternalInventory craftingMatrix, ItemStack recipeResult) {
+        ItemStack[] matrixSnapshot = new ItemStack[Math.min(craftingMatrix.size(), MAX_INPUT_SLOTS)];
+        for (int i = 0; i < matrixSnapshot.length; i++) {
+            ItemStack stack = craftingMatrix.getStackInSlot(i);
+            matrixSnapshot[i] = stack == null ? ItemStack.EMPTY : stack.copy();
+        }
+
         encodedInputInv.clear();
         encodedOutputInv.clear();
 
-        for (int i = 0; i < Math.min(craftingMatrix.size(), MAX_INPUT_SLOTS); i++) {
-            ItemStack stack = craftingMatrix.getStackInSlot(i);
+        for (int i = 0; i < matrixSnapshot.length; i++) {
+            ItemStack stack = matrixSnapshot[i];
             if (!stack.isEmpty()) {
                 var itemKey = AEItemKey.of(stack);
                 if (itemKey != null) {
@@ -435,7 +475,7 @@ public class ExtremePatternEncodingLogic implements InternalInventoryHost {
         }
 
         for (int i = 0; i < craftingMatrix.size(); i++) {
-            craftingMatrix.insertItem(i, ItemStack.EMPTY, false);
+            craftingMatrix.extractItem(i, Integer.MAX_VALUE, false);
         }
 
         var inputStacks = extreme.getInputStacks();

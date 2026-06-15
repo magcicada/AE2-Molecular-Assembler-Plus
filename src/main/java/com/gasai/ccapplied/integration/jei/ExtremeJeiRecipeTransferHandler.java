@@ -8,12 +8,13 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExtremeJeiRecipeTransferHandler implements IRecipeTransferHandler<ExtremePatternEncodingTermMenu, CraftingRecipe> {
+public class ExtremeJeiRecipeTransferHandler implements IRecipeTransferHandler<ExtremePatternEncodingTermMenu, RecipeHolder<CraftingRecipe>> {
     private final IRecipeTransferHandlerHelper helper;
 
     public ExtremeJeiRecipeTransferHandler(IRecipeTransferHandlerHelper helper) {
@@ -31,13 +32,14 @@ public class ExtremeJeiRecipeTransferHandler implements IRecipeTransferHandler<E
     }
 
     @Override
-    public mezz.jei.api.recipe.RecipeType<CraftingRecipe> getRecipeType() {
+    public mezz.jei.api.recipe.RecipeType<RecipeHolder<CraftingRecipe>> getRecipeType() {
         return mezz.jei.api.constants.RecipeTypes.CRAFTING;
     }
 
     @Override
-    public IRecipeTransferError transferRecipe(ExtremePatternEncodingTermMenu menu, CraftingRecipe recipe, IRecipeSlotsView slots, Player player, boolean maxTransfer, boolean doTransfer) {
+    public IRecipeTransferError transferRecipe(ExtremePatternEncodingTermMenu menu, RecipeHolder<CraftingRecipe> recipeHolder, IRecipeSlotsView slots, Player player, boolean maxTransfer, boolean doTransfer) {
         if (!doTransfer) return null;
+        var recipe = recipeHolder.value();
         List<ItemStack> inputs;
         int w;
         int h;

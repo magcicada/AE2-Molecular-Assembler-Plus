@@ -6,8 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -17,14 +18,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
+import appeng.api.AECapabilities;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.implementations.IPowerChannelState;
@@ -43,8 +43,9 @@ import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.IUpgradeableObject;
 import appeng.api.upgrades.UpgradeInventories;
 import appeng.api.util.AECableType;
-import appeng.blockentity.grid.AENetworkInvBlockEntity;
-import appeng.capabilities.Capabilities;
+import appeng.blockentity.grid.AENetworkedInvBlockEntity;
+import appeng.core.AppEng;
+import appeng.core.network.clientbound.AssemblerAnimationPacket;
 import appeng.client.render.crafting.AssemblerAnimationStatus;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
@@ -52,15 +53,13 @@ import appeng.core.localization.GuiText;
 import appeng.core.localization.Tooltips;
 import com.gasai.ccapplied.core.registry.CCBlocks;
 import com.gasai.ccapplied.core.registry.CCOptionalMods;
-import appeng.core.sync.network.NetworkHandler;
-import appeng.core.sync.network.TargetPoint;
-import appeng.core.sync.packets.AssemblerAnimationPacket;
 import appeng.crafting.CraftingEvent;
 import appeng.menu.AutoCraftingMenu;
 import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.CombinedInternalInventory;
 import appeng.util.inv.FilteredInternalInventory;
 import appeng.util.inv.filter.IAEItemFilter;
+import appeng.util.inv.AppEngInternalInventory;
 import com.gasai.ccapplied.CCApplied;
 import com.gasai.ccapplied.patterns.IMolecularAssemblerSupportedPattern;
 import com.gasai.ccapplied.patterns.ExtremeCraftingPattern;
@@ -69,7 +68,7 @@ import com.gasai.ccapplied.patterns.DraconicFusionPattern;
 /**
  * TileEntity for Extreme Molecular Assembler - supports 9x9 recipes
  */
-public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
+public class ExtremeMolecularAssemblerTileEntity extends AENetworkedInvBlockEntity
         implements IUpgradeableObject, IGridTickable, ICraftingMachine, IPowerChannelState {
     public enum AssemblerTier {
         WYVERN,
@@ -231,7 +230,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         for (var list : table) {
             list.removeZeros();
             if (!list.isEmpty()) {
-                list.clear();
+                throw new RuntimeException("Could not fill grid with some items, including " + list.iterator().next());
             }
         }
     }
@@ -259,24 +258,6 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             return false;
         }
 
-        boolean hasAllItems = true;
-        for (int x = 0; x < this.craftingInv.getContainerSize(); x++) {
-            ItemStack stack = this.gridInv.getStackInSlot(x);
-            if (stack.isEmpty() && !this.myPlan.isSlotEnabled(x)) {
-                continue;
-            }
-            AEItemKey key = stack.isEmpty() ? null : AEItemKey.of(stack);
-            
-            if (!this.myPlan.isItemValid(x, key, this.getLevel())) {
-                hasAllItems = false;
-                break;
-            }
-        }
-
-        if (!hasAllItems) {
-            return false;
-        }
-
         for (int x = 0; x < this.craftingInv.getContainerSize(); x++) {
             this.craftingInv.setItem(x, this.gridInv.getStackInSlot(x));
         }
@@ -290,7 +271,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     }
 
     @Override
-    protected boolean readFromStream(FriendlyByteBuf data) {
+    protected boolean readFromStream(RegistryFriendlyByteBuf data) {
         final boolean c = super.readFromStream(data);
         final boolean oldPower = this.isPowered;
         this.isPowered = data.readBoolean();
@@ -298,20 +279,20 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     }
 
     @Override
-    protected void writeToStream(FriendlyByteBuf data) {
+    protected void writeToStream(RegistryFriendlyByteBuf data) {
         super.writeToStream(data);
         data.writeBoolean(this.isPowered);
     }
 
     @Override
-    public void saveAdditional(CompoundTag data) {
-        super.saveAdditional(data);
+    public void saveAdditional(CompoundTag data, Provider provider) {
+        super.saveAdditional(data, provider);
         if (this.forcePlan) {
             // If the plan is null it means the pattern previously loaded from NBT hasn't been decoded yet
             var pattern = myPlan != null ? ((IPatternDetails) myPlan).getDefinition().toStack() : myPattern;
             if (!pattern.isEmpty()) {
                 var compound = new CompoundTag();
-                pattern.save(compound);
+                pattern.save(provider, compound);
                 data.put("myPlan", compound);
                 data.putInt("pushDirection", this.pushDirection.ordinal());
             }
@@ -319,12 +300,12 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
 
         data.putLong("fusionEnergyAccumulated", this.fusionEnergyAccumulated);
         data.putInt("fusionCraftTicks", this.fusionCraftTicks);
-        this.upgrades.writeToNBT(data, "upgrades");
+        this.upgrades.writeToNBT(data, "upgrades", provider);
     }
 
     @Override
-    public void loadTag(CompoundTag data) {
-        super.loadTag(data);
+    public void loadTag(CompoundTag data, Provider provider) {
+        super.loadTag(data, provider);
 
         this.forcePlan = false;
         this.myPattern = ItemStack.EMPTY;
@@ -334,7 +315,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         this.fusionAnimationRefreshTicks = 0;
 
         if (data.contains("myPlan")) {
-            var pattern = ItemStack.of(data.getCompound("myPlan"));
+            var pattern = ItemStack.parseOptional(provider, data.getCompound("myPlan"));
             if (!pattern.isEmpty()) {
                 this.forcePlan = true;
                 this.myPattern = pattern;
@@ -342,7 +323,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             }
         }
 
-        this.upgrades.readFromNBT(data, "upgrades");
+        this.upgrades.readFromNBT(data, "upgrades", provider);
         this.recalculatePlan();
     }
 
@@ -355,8 +336,8 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             // didn't have a chance to decode it yet
             if (getLevel() != null && myPlan == null) {
                 if (!myPattern.isEmpty()) {
-                    if (PatternDetailsHelper.decodePattern(myPattern, getLevel(),
-                            false) instanceof IMolecularAssemblerSupportedPattern supportedPlan) {
+                    if (PatternDetailsHelper.decodePattern(myPattern, getLevel())
+                            instanceof IMolecularAssemblerSupportedPattern supportedPlan) {
                         if (isAllowedStoredPattern(supportedPlan)) {
                             this.myPlan = supportedPlan;
                         }
@@ -378,10 +359,10 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         boolean reset = true;
 
         if (!is.isEmpty()) {
-            if (ItemStack.isSameItemSameTags(is, this.myPattern)) {
+            if (ItemStack.isSameItemSameComponents(is, this.myPattern)) {
                 reset = this.myPlan == null || !isAllowedStoredPattern(this.myPlan);
-            } else if (PatternDetailsHelper.decodePattern(is, getLevel(),
-                    false) instanceof IMolecularAssemblerSupportedPattern supportedPattern) {
+            } else if (PatternDetailsHelper.decodePattern(is, getLevel())
+                    instanceof IMolecularAssemblerSupportedPattern supportedPattern) {
                 if (isAllowedStoredPattern(supportedPattern)) {
                     reset = false;
                     this.progress = 0;
@@ -392,7 +373,6 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         }
 
         if (reset) {
-            this.ejectAllHeldInputs();
             this.progress = 0;
             this.fusionEnergyAccumulated = 0L;
             this.fusionCraftTicks = 0;
@@ -433,7 +413,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     }
 
     @Override
-    public void onChangeInventory(InternalInventory inv, int slot) {
+    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
         if (inv == this.gridInv || inv == this.patternInv) {
             this.recalculatePlan();
         }
@@ -462,7 +442,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     public TickingRequest getTickingRequest(IGridNode node) {
         this.recalculatePlan();
         this.updateSleepiness();
-        return new TickingRequest(1, 1, !this.isAwake, false);
+        return new TickingRequest(1, 1, !this.isAwake);
     }
 
     @Override
@@ -527,6 +507,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             this.progress = 0;
             final ItemStack output = this.myPlan.assemble(this.craftingInv, this.getLevel());
             if (!output.isEmpty()) {
+                output.onCraftedBySystem(level);
                 CraftingEvent.fireAutoCraftingEvent(getLevel(), (IPatternDetails) this.myPlan, output, this.craftingInv);
 
                 var craftingRemainders = this.myPlan.getRemainingItems(this.craftingInv);
@@ -550,12 +531,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
 
                 var item = AEItemKey.of(output);
                 if (item != null) {
-                    final TargetPoint where = new TargetPoint(this.worldPosition.getX(), this.worldPosition.getY(),
-                            this.worldPosition.getZ(), 32,
-                            this.level);
-                    NetworkHandler.instance()
-                            .sendToAllAround(new AssemblerAnimationPacket(this.worldPosition, (byte) speed, item),
-                                    where);
+                    AppEng.instance().sendToAllNearExcept(null, this.worldPosition.getX(), this.worldPosition.getY(),
+                            this.worldPosition.getZ(), 32, this.level, new AssemblerAnimationPacket(this.worldPosition,
+                                    (byte) speed, item));
                 }
 
                 this.saveChanges();
@@ -633,10 +611,9 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
         if (item == null || this.level == null) {
             return;
         }
-        final TargetPoint where = new TargetPoint(this.worldPosition.getX(), this.worldPosition.getY(),
-                this.worldPosition.getZ(), 32, this.level);
-        NetworkHandler.instance()
-                .sendToAllAround(new AssemblerAnimationPacket(this.worldPosition, speed, item), where);
+        AppEng.instance().sendToAllNearExcept(null, this.worldPosition.getX(), this.worldPosition.getY(),
+                this.worldPosition.getZ(), 32, this.level, new AssemblerAnimationPacket(this.worldPosition, speed,
+                        item));
     }
 
     private long pullFusionEnergy(long wanted) {
@@ -671,39 +648,15 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             if (be == null) {
                 continue;
             }
-            var cap = be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
-            if (!cap.isPresent()) {
+            var cap = level.getCapability(Capabilities.EnergyStorage.BLOCK, be.getBlockPos(), direction.getOpposite());
+            if (cap == null) {
                 continue;
             }
             long remaining = wanted - pulled;
             int request = (int) Math.min(Integer.MAX_VALUE, remaining);
-            pulled += cap.map(energy -> energy.extractEnergy(request, false)).orElse(0);
+            pulled += cap.extractEnergy(request, false);
         }
         return pulled;
-    }
-
-    private void ejectAllHeldInputs() {
-        if (this.myPlan == null) {
-            return;
-        }
-        for (int x = 0; x < 81; x++) {
-            ItemStack stack = this.gridInv.getStackInSlot(x);
-            if (stack.isEmpty()) {
-                continue;
-            }
-            ItemStack remainder = stack.copy();
-            if (this.pushDirection != null) {
-                remainder = this.pushTo(remainder, this.pushDirection);
-            } else {
-                for (Direction d : Direction.values()) {
-                    remainder = this.pushTo(remainder, d);
-                    if (remainder.isEmpty()) {
-                        break;
-                    }
-                }
-            }
-            this.gridInv.setItemDirect(x, remainder);
-        }
     }
 
     private void ejectHeldItems() {
@@ -763,7 +716,7 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
             return output;
         }
 
-        var adaptor = InternalInventory.wrapExternal(te, d.getOpposite());
+        var adaptor = InternalInventory.wrapExternal(level, te.getBlockPos(), d.getOpposite());
         if (adaptor == null) {
             return output;
         }
@@ -821,15 +774,6 @@ public class ExtremeMolecularAssemblerTileEntity extends AENetworkInvBlockEntity
     @Override
     public IUpgradeInventory getUpgrades() {
         return upgrades;
-    }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, Direction facing) {
-        if (Capabilities.CRAFTING_MACHINE == capability) {
-            return Capabilities.CRAFTING_MACHINE.orEmpty(capability, LazyOptional.of(() -> this));
-        }
-
-        return super.getCapability(capability, facing);
     }
 
     @Nullable

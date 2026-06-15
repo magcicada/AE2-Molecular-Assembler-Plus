@@ -50,7 +50,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             IExtremePatternTerminalMenuHost.class).build("draconic_patternterm");
 
     private final ExtremePatternEncodingLogic logic;
-    private final appeng.util.inv.AppEngInternalInventory craftingMatrix = new appeng.util.inv.AppEngInternalInventory(null, TOTAL_SLOTS);
+    private final InternalInventory craftingMatrix;
     private final appeng.util.inv.AppEngInternalInventory resultPreviewInv = new appeng.util.inv.AppEngInternalInventory(null, 1);
     private final FakeSlot[] inputSlots = new FakeSlot[OUTER_SLOTS];
     private final FakeSlot catalystSlot;
@@ -70,14 +70,16 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
     public DraconicPatternEncodingTermMenu(MenuType<?> type, int id, Inventory inv, IExtremePatternTerminalMenuHost host, boolean bindInv) {
         super(type, id, inv, host, bindInv);
         this.logic = host.getLogic();
+        var inputsWrapper = logic.getEncodedInputInv().createMenuWrapper();
+        this.craftingMatrix = inputsWrapper.getSubInventory(0, TOTAL_SLOTS);
 
         for (int i = 0; i < OUTER_SLOTS; i++) {
-            var slot = new FakeSlot(craftingMatrix, i);
+            var slot = new FakeSlot(inputsWrapper, i);
             slot.setHideAmount(true);
             inputSlots[i] = slot;
             this.addSlot(slot, OUTER_SLOT_SEMANTICS[i]);
         }
-        this.catalystSlot = new FakeSlot(craftingMatrix, CENTER_SLOT);
+        this.catalystSlot = new FakeSlot(inputsWrapper, CENTER_SLOT);
         this.catalystSlot.setHideAmount(true);
         this.addSlot(this.catalystSlot, CATALYST_SLOT_SEMANTIC);
         this.resultPreviewSlot = new PreviewOnlySlot(resultPreviewInv, 0);
@@ -89,10 +91,6 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
 
         registerClientAction(ACTION_ENCODE, this::encode);
         registerClientAction(ACTION_CLEAR, this::clearAll);
-        registerClientAction("draconic_jei_apply_fusion", JeiFusionData.class, data -> {
-            if (isClientSide()) return;
-            applyJeiFusionRecipe(data);
-        });
 
         if (!isClientSide()) {
             logic.loadDraconicMatrixInto(craftingMatrix);
@@ -119,7 +117,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             }
             var key = appeng.api.stacks.AEItemKey.of(stack);
             if (key != null && idx < OUTER_SLOTS) {
-                inputs[idx++] = new appeng.api.stacks.GenericStack(key, 1);
+                inputs[idx++] = new appeng.api.stacks.GenericStack(key, Math.max(1, stack.getCount()));
             }
         }
         var center = craftingMatrix.getStackInSlot(CENTER_SLOT);
@@ -128,9 +126,21 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
         if (centerKey == null || outKey == null) {
             return;
         }
-        inputs[OUTER_SLOTS] = new appeng.api.stacks.GenericStack(centerKey, 1);
+        inputs[OUTER_SLOTS] = new appeng.api.stacks.GenericStack(centerKey, Math.max(1, center.getCount()));
         var output = new appeng.api.stacks.GenericStack(outKey, Math.max(1, match.result().getCount()));
         logic.encodeDraconicPattern(inputs, output, match.tier(), match.totalEnergy(), match.recipeId());
+    }
+
+    @Override
+    public void setItem(int slotID, int stateId, ItemStack stack) {
+        super.setItem(slotID, stateId, stack);
+        findFusionRecipe();
+    }
+
+    @Override
+    public void initializeContents(int stateId, List<ItemStack> items, ItemStack carried) {
+        super.initializeContents(stateId, items, carried);
+        findFusionRecipe();
     }
 
     public void clearAll() {
@@ -139,7 +149,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             return;
         }
         for (int i = 0; i < TOTAL_SLOTS; i++) {
-            craftingMatrix.setItemDirect(i, ItemStack.EMPTY);
+            setFilterSlot(i, ItemStack.EMPTY);
         }
         clearRecipePreview();
         logic.setRecipeId(null);
@@ -147,7 +157,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
     }
 
     public boolean canEncode() {
-        if (blankPatternSlot.getItem().isEmpty()) {
+        if (blankPatternSlot.getItem().isEmpty() && encodedPatternSlot.getItem().isEmpty()) {
             return false;
         }
         return findFusionRecipe() != null;
@@ -158,17 +168,13 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             clearRecipePreview();
             return null;
         }
-        if (blankPatternSlot.getItem().isEmpty()) {
-            clearRecipePreview();
-            logic.setRecipeId(null);
-            logic.saveDraconicMatrix(craftingMatrix, ItemStack.EMPTY);
-            return null;
-        }
         var center = craftingMatrix.getStackInSlot(CENTER_SLOT);
         if (center.isEmpty()) {
             clearRecipePreview();
-            logic.setRecipeId(null);
-            logic.saveDraconicMatrix(craftingMatrix, ItemStack.EMPTY);
+            if (!isClientSide()) {
+                logic.setRecipeId(null);
+                logic.saveDraconicMatrix(craftingMatrix, ItemStack.EMPTY);
+            }
             return null;
         }
         List<ItemStack> outer = new ArrayList<>();
@@ -183,12 +189,16 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
             uiTierOrdinal = match.tier().ordinal();
             uiEnergyCost = Math.max(0L, match.totalEnergy());
             resultPreviewInv.setItemDirect(0, match.result().copy());
-            logic.setRecipeId(match.recipeId());
-            logic.saveDraconicMatrix(craftingMatrix, match.result());
+            if (!isClientSide()) {
+                logic.setRecipeId(match.recipeId());
+                logic.saveDraconicMatrix(craftingMatrix, match.result());
+            }
         } else {
             clearRecipePreview();
-            logic.setRecipeId(null);
-            logic.saveDraconicMatrix(craftingMatrix, ItemStack.EMPTY);
+            if (!isClientSide()) {
+                logic.setRecipeId(null);
+                logic.saveDraconicMatrix(craftingMatrix, ItemStack.EMPTY);
+            }
         }
         return match;
     }
@@ -199,31 +209,13 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
         resultPreviewInv.setItemDirect(0, ItemStack.EMPTY);
     }
 
-    @Override
-    protected ItemStack transferStackToMenu(ItemStack input) {
-        if (blankPatternSlot.mayPlace(input)) {
-            input = blankPatternSlot.safeInsert(input);
-            if (input.isEmpty()) return ItemStack.EMPTY;
-        }
-        if (encodedPatternSlot.mayPlace(input)) {
-            input = encodedPatternSlot.safeInsert(input);
-            if (input.isEmpty()) return ItemStack.EMPTY;
-        }
-        return super.transferStackToMenu(input);
-    }
-
-    @Override
     public void onSlotChange(Slot slot) {
         if (!isClientSide()) {
             if (slot == encodedPatternSlot) {
                 var patternStack = slot.getItem();
                 if (!patternStack.isEmpty()) {
-                    logic.loadDraconicMatrixInto(craftingMatrix);
-                } else {
-                    for (int i = 0; i < TOTAL_SLOTS; i++) {
-                        craftingMatrix.setItemDirect(i, ItemStack.EMPTY);
-                    }
-                    logic.clearCraftingGrid();
+                    logic.loadDraconicPatternIntoMatrix(craftingMatrix, patternStack);
+                    broadcastChanges();
                 }
             }
             findFusionRecipe();
@@ -248,50 +240,104 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
     }
 
     public void requestApplyJeiFusion(ItemStack catalyst, List<ItemStack> outer) {
-        var list = new ArrayList<JeiItem>(outer.size());
-        for (var st : outer) {
-            list.add(new JeiItem(toSnbt(st)));
-        }
-        sendClientAction("draconic_jei_apply_fusion", new JeiFusionData(toSnbt(catalyst), list));
+        sendFusionFilters(catalyst, outer);
     }
 
     private void applyJeiFusionRecipe(JeiFusionData data) {
-        for (int i = 0; i < TOTAL_SLOTS; i++) {
-            craftingMatrix.setItemDirect(i, ItemStack.EMPTY);
+        List<ItemStack> outer = new ArrayList<>(data.outer.size());
+        for (var item : data.outer) {
+            outer.add(fromSnbt(item.snbt));
         }
-
-        int limit = Math.min(OUTER_SLOTS, data.outer.size());
-        for (int i = 0; i < limit; i++) {
-            craftingMatrix.setItemDirect(i, fromSnbt(data.outer.get(i).snbt));
-        }
-        craftingMatrix.setItemDirect(CENTER_SLOT, fromSnbt(data.catalyst));
-        findFusionRecipe();
+        applyJeiFusionStacks(fromSnbt(data.catalyst), outer, true);
     }
 
-    private static String toSnbt(ItemStack stack) {
+    private void applyJeiFusionStacks(ItemStack catalyst, List<ItemStack> outer, boolean updateRecipe) {
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            setFilterSlot(i, ItemStack.EMPTY);
+        }
+
+        int limit = Math.min(OUTER_SLOTS, outer.size());
+        for (int i = 0; i < limit; i++) {
+            var stack = outer.get(i);
+            setFilterSlot(i, stack == null ? ItemStack.EMPTY : stack.copy());
+        }
+        if (catalyst != null) {
+            setFilterSlot(CENTER_SLOT, catalyst.copy());
+        }
+        if (updateRecipe) {
+            findFusionRecipe();
+            broadcastChanges();
+        }
+    }
+
+    private String toSnbt(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return "{}";
         }
         var tag = new net.minecraft.nbt.CompoundTag();
-        stack.save(tag);
+        stack.save(getPlayer().registryAccess(), tag);
         return tag.toString();
     }
 
-    private static ItemStack fromSnbt(String snbt) {
+    private ItemStack fromSnbt(String snbt) {
         try {
-            return ItemStack.of(net.minecraft.nbt.TagParser.parseTag(snbt));
+            return ItemStack.parseOptional(getPlayer().registryAccess(), net.minecraft.nbt.TagParser.parseTag(snbt));
         } catch (Exception ignored) {
         }
         return ItemStack.EMPTY;
     }
 
+    private void setFilterSlot(int slot, ItemStack stack) {
+        craftingMatrix.extractItem(slot, Integer.MAX_VALUE, false);
+        if (stack != null && !stack.isEmpty()) {
+            craftingMatrix.insertItem(slot, stack.copy(), false);
+        }
+    }
+
+    private void sendFusionFilters(ItemStack catalyst, List<ItemStack> outer) {
+        for (int i = 0; i < OUTER_SLOTS; i++) {
+            sendSetFilter(inputSlots[i], ItemStack.EMPTY);
+        }
+        sendSetFilter(catalystSlot, ItemStack.EMPTY);
+
+        int limit = Math.min(OUTER_SLOTS, outer.size());
+        for (int i = 0; i < limit; i++) {
+            var stack = outer.get(i);
+            if (stack != null && !stack.isEmpty()) {
+                sendSetFilter(inputSlots[i], stack.copy());
+            }
+        }
+        if (catalyst != null && !catalyst.isEmpty()) {
+            sendSetFilter(catalystSlot, catalyst.copy());
+        }
+    }
+
+    private static void sendSetFilter(FakeSlot slot, ItemStack stack) {
+        appeng.core.network.ServerboundPacket message = new appeng.core.network.serverbound.InventoryActionPacket(
+                appeng.helpers.InventoryAction.SET_FILTER, slot.index, stack);
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(message);
+    }
+
     public static class JeiFusionData {
+        private static final com.google.gson.Gson GSON = new com.google.gson.Gson();
         public final String catalyst;
         public final List<JeiItem> outer;
 
         public JeiFusionData(String catalyst, List<JeiItem> outer) {
             this.catalyst = catalyst;
             this.outer = outer;
+        }
+
+        public String toPayload() {
+            return GSON.toJson(this);
+        }
+
+        public static JeiFusionData fromPayload(String payload) {
+            try {
+                return GSON.fromJson(payload, JeiFusionData.class);
+            } catch (Exception ignored) {
+                return null;
+            }
         }
     }
 

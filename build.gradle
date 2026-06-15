@@ -1,150 +1,111 @@
 plugins {
+    id 'java-library'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7.+'
+    id 'net.neoforged.gradle.userdev' version '7.1.36'
 }
 
 version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = mod_name
+    archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+// Minecraft 1.21.1 requires Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
 }
 
-
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-    copyIdeResources = true
-
-    runs {
-        configureEach {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-
-
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            property 'forge.enabledGameTestNamespaces', mod_id
-            property 'mixin.debug', 'true'
-        }
-
-        server {
-            property 'forge.enabledGameTestNamespaces', mod_id
-            args '--nogui'
-        }
-
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        data {
-            workingDirectory project.file('run-data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
-    }
-}
-
-mixin {
-    add sourceSets.main, "ccapplied.refmap.json"
-    config "ccapplied.mixins.json"
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+sourceSets.main.resources { srcDir('src/generated/resources') }
 
 repositories {
-    flatDir { dirs 'libs' }
+    mavenCentral()
     maven {
-        name = "Progwml6's maven"
-        url = "https://dvs1.progwml6.com/files/maven/"
+        url = 'https://maven.neoforged.net/releases'
     }
     maven {
-        name = "Jared's maven"
-        url = "https://maven.blamejared.com/"
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
     }
     maven {
-        name = "ModMaven"
-        url = "https://modmaven.dev"
+        url = 'https://maven.blamejared.com'
     }
-    maven {
-        url "https://cursemaven.com"
-        content { includeGroup "curse.maven" }
-    }
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation "net.neoforged:neoforge:${neo_version}"
 
-    // JEI API (compile only) + runtime
-    compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
-    compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
-    runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))
+    // JEI API (compile only) + local runtime
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
-    // AE2
-    implementation fg.deobf("curse.maven:applied-energistics-2-223794:6852919")
-    implementation fg.deobf("curse.maven:guideme-1173950:7013686")
+    // AE2 is a hard dependency.
+    implementation "curse.maven:applied-energistics-2-223794:7027323"
+    localRuntime "curse.maven:guideme-1173950:6488254"
 
-    //Mekanism (MC 1.20.1)
-    implementation fg.deobf("curse.maven:mekanism-268560:6552911")
+    // Optional integrations, kept available in dev runtime.
+    compileOnly "curse.maven:extended-crafting-268387:7713533"
+    localRuntime "curse.maven:extended-crafting-268387:7713533"
 
-    // Draconic Evolution (MC 1.20.1)
-    compileOnly fg.deobf("curse.maven:draconic-evolution-223565:6793843")
-    runtimeOnly fg.deobf("curse.maven:draconic-evolution-223565:6793843")
-    compileOnly fg.deobf("curse.maven:brandons-core-231382:5422013")
-    runtimeOnly fg.deobf("curse.maven:brandons-core-231382:5422013")
-    compileOnly fg.deobf("curse.maven:codechicken-lib-1-8-242818:5753868")
-    runtimeOnly fg.deobf("curse.maven:codechicken-lib-1-8-242818:5753868")
+    compileOnly "curse.maven:cucumber-272335:7180790"
+    localRuntime "curse.maven:cucumber-272335:7180790"
 
-    // Optional compile-time APIs. These are not bundled or required at runtime.
-    compileOnly fg.deobf("curse.maven:extended-crafting-268387:6880322")
-    compileOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+    compileOnly "curse.maven:draconic-evolution-223565:7584459"
+    localRuntime "curse.maven:draconic-evolution-223565:7584459"
 
-    // Dev test: Extended Crafting
-     runtimeOnly fg.deobf("curse.maven:extended-crafting-268387:6880322")
-     runtimeOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+    compileOnly "curse.maven:brandons-core-231382:7130990"
+    localRuntime "curse.maven:brandons-core-231382:7130990"
 
-    // Extended Crafting: Expanded
-    // Uses the same mod id as Extended Crafting. Comment out regular Extended Crafting above before enabling.
-    // runtimeOnly fg.deobf("curse.maven:extended-crafting-expanded-1017786:5613251")
-    // runtimeOnly fg.deobf("curse.maven:cucumber-272335:6880321")
+    compileOnly "curse.maven:codechicken-lib-1-8-242818:7281427"
+    localRuntime "curse.maven:codechicken-lib-1-8-242818:7281427"
 
-    // Re:Avaritia
-    // runtimeOnly fg.deobf("curse.maven:re-avaritia-623969:7647188")
-
-    // AvaritiaNeo
-     runtimeOnly fg.deobf("curse.maven:avaritianeo-1083158:7940905")
-
-    // Extended Terminal
-    // runtimeOnly fg.deobf("curse.maven:myotus-lib-1496024:7995254")
-    // runtimeOnly fg.deobf("curse.maven:extended-terminal-1302078:7995350")
+    compileOnly "curse.maven:avaritianeo-1083158:7940871"
+    localRuntime "curse.maven:avaritianeo-1083158:7940871"
 }
 
-tasks.named('processResources', ProcessResources).configure {
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        workingDirectory project.layout.projectDirectory.dir('run').dir(name)
+        modSource project.sourceSets.main
+    }
+
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        systemProperty 'mixin.debug', 'true'
+    }
+
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        argument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+    }
+
+    data {
+        // Keep data generation output in the workspace.
+        arguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+tasks.withType(ProcessResources).configureEach {
     var replaceProperties = [
             minecraft_version       : minecraft_version,
             minecraft_version_range : minecraft_version_range,
-            forge_version           : forge_version,
-            forge_version_range     : forge_version_range,
+            neo_version             : neo_version,
             loader_version_range    : loader_version_range,
             mod_id                  : mod_id,
             mod_name                : mod_name,
@@ -155,7 +116,7 @@ tasks.named('processResources', ProcessResources).configure {
     ]
     inputs.properties replaceProperties
 
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
     }
 }
@@ -170,26 +131,30 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Version'  : project.jar.archiveVersion,
                 'Implementation-Vendor'   : mod_authors,
                 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-
         ])
     }
-
-    finalizedBy 'reobfJar'
 }
 
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifact jar
+            from components.java
         }
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            url "file://${project.projectDir}/repo"
         }
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
 }

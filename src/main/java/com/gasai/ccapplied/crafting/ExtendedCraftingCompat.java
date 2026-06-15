@@ -7,6 +7,7 @@ import java.util.List;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,10 +23,14 @@ final class ExtendedCraftingCompat {
 
         try {
             for (var recipe : level.getRecipeManager().getRecipes()) {
-                if (isTableRecipe(recipe) && matches(recipe, craftingGrid)) {
+                if (isTableRecipe(recipe.value()) && matches(recipe.value(), craftingGrid)) {
+                    ItemStack result = getResult(recipe.value(), craftingGrid, level);
+                    if (result.isEmpty()) {
+                        continue;
+                    }
                     return new ExtremeRecipeMatch(
-                            recipe.getResultItem(level.registryAccess()).copy(),
-                            recipe.getId(),
+                            result,
+                            recipe.id(),
                             "extendedcrafting");
                 }
             }
@@ -37,18 +42,28 @@ final class ExtendedCraftingCompat {
     }
 
     private static boolean isTableRecipe(Recipe<?> recipe) {
-        for (Class<?> iface : recipe.getClass().getInterfaces()) {
-            if (iface.getName().equals("com.blakebr0.extendedcrafting.api.crafting.ITableRecipe")) {
-                return true;
+        try {
+            Class<?> tableRecipe = Class.forName("com.blakebr0.extendedcrafting.api.crafting.ITableRecipe");
+            return tableRecipe.isInstance(recipe);
+        } catch (ClassNotFoundException ignored) {
+        }
+
+        Class<?> current = recipe.getClass();
+        while (current != null) {
+            for (Class<?> iface : current.getInterfaces()) {
+                if (iface.getName().equals("com.blakebr0.extendedcrafting.api.crafting.ITableRecipe")) {
+                    return true;
+                }
             }
+            current = current.getSuperclass();
         }
         return false;
     }
 
     private static boolean matches(Recipe<?> recipe, ItemStack[] craftingGrid) {
         try {
-            Integer width = invokeInt(recipe, "getWidth");
-            Integer height = invokeInt(recipe, "getHeight");
+            Integer width = invokeInt(recipe, "getWidth", "width", "recipeWidth");
+            Integer height = invokeInt(recipe, "getHeight", "height", "recipeHeight");
 
             if (width != null && height != null) {
                 return matchesShaped(recipe, craftingGrid, width, height);
@@ -76,6 +91,15 @@ final class ExtendedCraftingCompat {
         }
 
         return false;
+    }
+
+    static ItemStack getResult(Recipe<?> recipe, ItemStack[] craftingGrid, Level level) {
+        try {
+            return recipe.getResultItem(level.registryAccess()).copy();
+        } catch (Exception ignored) {
+        }
+
+        return ItemStack.EMPTY;
     }
 
     private static boolean matchesRecipeAtPosition(
@@ -148,14 +172,36 @@ final class ExtendedCraftingCompat {
         return availableItems.isEmpty();
     }
 
-    private static @Nullable Integer invokeInt(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            Object value = method.invoke(target);
-            return value instanceof Number number ? number.intValue() : null;
-        } catch (ReflectiveOperationException e) {
-            return null;
+    private static @Nullable Integer invokeInt(Object target, String... methodNames) {
+        for (String methodName : methodNames) {
+            try {
+                Method method = findMethod(target.getClass(), methodName);
+                Object value = method.invoke(target);
+                return value instanceof Number number ? number.intValue() : null;
+            } catch (ReflectiveOperationException ignored) {
+            }
         }
+        return null;
+    }
+
+    private static Method findMethod(Class<?> owner, String name) throws NoSuchMethodException {
+        Class<?> current = owner;
+        while (current != null) {
+            try {
+                Method method = current.getMethod(name);
+                method.setAccessible(true);
+                return method;
+            } catch (NoSuchMethodException ignored) {
+            }
+            try {
+                Method method = current.getDeclaredMethod(name);
+                method.setAccessible(true);
+                return method;
+            } catch (NoSuchMethodException ignored) {
+            }
+            current = current.getSuperclass();
+        }
+        throw new NoSuchMethodException(name);
     }
 
     private static boolean isEmptyGrid(ItemStack[] craftingGrid) {

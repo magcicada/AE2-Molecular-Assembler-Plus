@@ -12,14 +12,15 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import appeng.client.render.crafting.AssemblerAnimationStatus;
 import com.gasai.ccapplied.CCApplied;
@@ -63,12 +64,12 @@ public class ExtremeMolecularAssemblerRenderer implements BlockEntityRenderer<Ex
     private void renderPowerLight(PoseStack ms, MultiBufferSource bufferIn, int combinedLightIn,
             int combinedOverlayIn) {
         Minecraft minecraft = Minecraft.getInstance();
-        BakedModel lightsModel = minecraft.getModelManager().getModel(LIGHTS_MODEL);
-        // tripwire layer has the shader properties we need:
-        // alpha testing
-        // translucency
+        BakedModel lightsModel = minecraft.getModelManager().getModel(ModelResourceLocation.standalone(LIGHTS_MODEL));
+        if (lightsModel == null || lightsModel == minecraft.getModelManager().getMissingModel()) {
+            return;
+        }
+
         VertexConsumer buffer = bufferIn.getBuffer(RenderType.tripwire());
-        
         minecraft.getBlockRenderer().getModelRenderer().renderModel(ms.last(), buffer, null,
                 lightsModel, 1, 1, 1, combinedLightIn, combinedOverlayIn, ModelData.EMPTY, null);
     }

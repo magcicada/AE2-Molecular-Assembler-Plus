@@ -1,8 +1,9 @@
 package com.gasai.ccapplied.core.client;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.ModelEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 
 import com.gasai.ccapplied.client.render.ExtremeMolecularAssemblerRenderer;
 
@@ -10,6 +11,6 @@ import com.gasai.ccapplied.client.render.ExtremeMolecularAssemblerRenderer;
 public class InitAdditionalModels {
 
     public static void init(ModelEvent.RegisterAdditional event) {
-        event.register(ExtremeMolecularAssemblerRenderer.LIGHTS_MODEL);
+        event.register(ModelResourceLocation.standalone(ExtremeMolecularAssemblerRenderer.LIGHTS_MODEL));
     }
 }

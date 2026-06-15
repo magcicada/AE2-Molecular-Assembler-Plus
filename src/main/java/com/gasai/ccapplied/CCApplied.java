@@ -1,13 +1,13 @@
 package com.gasai.ccapplied;
 
 import appeng.api.crafting.PatternDetailsHelper;
+import com.gasai.ccapplied.client.CCPartModelRegistry;
 import com.gasai.ccapplied.core.registry.CCItems;
 import com.gasai.ccapplied.core.registry.CCMenuTypes;
 import com.gasai.ccapplied.core.registry.CCBlocks;
 import com.gasai.ccapplied.patterns.ExtremePatternDecoder;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
 
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
@@ -25,8 +25,7 @@ public final class CCApplied {
         return ResourceLocation.fromNamespaceAndPath(MODID, path);
     }
 
-    public CCApplied() {
-        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+    public CCApplied(IEventBus modBus) {
         
         CCBlocks.BLOCKS.register(modBus);
         CCBlocks.ITEMS.register(modBus);
@@ -34,9 +33,9 @@ public final class CCApplied {
         CCItems.ITEMS.register(modBus);
         CCMenuTypes.MENUS.register(modBus);
         com.gasai.ccapplied.core.registry.CCCreativeTabs.CREATIVE_TABS.register(modBus);
+        modBus.addListener(com.gasai.ccapplied.core.registry.CCCapabilities::register);
 
+        CCPartModelRegistry.registerPartModels();
         PatternDetailsHelper.registerDecoder(ExtremePatternDecoder.INSTANCE);
-        
-        com.gasai.ccapplied.client.CCPartModelRegistry.registerPartModels();
     }
 }
