@@ -1,5 +1,6 @@
 package com.gasai.ccapplied.menus;
 
+import com.gasai.ccapplied.CCApplied;
 import com.gasai.ccapplied.integration.ae2.api.IExtremePatternTerminalMenuHost;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
@@ -42,7 +43,7 @@ public class ExtremePatternEncodingTermMenu extends MEStorageMenu {
     MenuTypeBuilder.create(
         ExtremePatternEncodingTermMenu::new,
         IExtremePatternTerminalMenuHost.class
-    ).build("extreme_patternterm");
+    ).buildUnregistered(CCApplied.makeId("extreme_patternterm"));
 
     private final ExtremePatternEncodingLogic logic;
 
