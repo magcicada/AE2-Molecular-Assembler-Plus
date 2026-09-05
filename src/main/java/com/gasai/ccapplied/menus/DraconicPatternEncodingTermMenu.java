@@ -1,5 +1,6 @@
 package com.gasai.ccapplied.menus;
 
+import com.gasai.ccapplied.CCApplied;
 import appeng.api.inventories.InternalInventory;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.SlotSemantics;
@@ -47,7 +48,7 @@ public class DraconicPatternEncodingTermMenu extends MEStorageMenu {
 
     public static final MenuType<DraconicPatternEncodingTermMenu> TYPE = MenuTypeBuilder.create(
             DraconicPatternEncodingTermMenu::new,
-            IExtremePatternTerminalMenuHost.class).build("draconic_patternterm");
+            IExtremePatternTerminalMenuHost.class).buildUnregistered(CCApplied.makeId("draconic_patternterm"));
 
     private final ExtremePatternEncodingLogic logic;
     private final InternalInventory craftingMatrix;
